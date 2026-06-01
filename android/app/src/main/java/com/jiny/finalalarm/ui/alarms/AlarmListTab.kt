@@ -70,16 +70,16 @@ fun AlarmListTab(nav: NavController, modifier: Modifier = Modifier, vm: AlarmLis
             .padding(horizontal = FaSpacing.lg),
     ) {
         item {
-            Spacer(Modifier.height(FaSpacing.lg))
+            Spacer(Modifier.height(FaSpacing.xl))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("⏰", style = MaterialTheme.typography.displayLarge)
-                    Spacer(Modifier.height(FaSpacing.xs))
-                    Text("알람", style = MaterialTheme.typography.displayMedium)
-                }
+                Text(
+                    "알람",
+                    style = MaterialTheme.typography.displayMedium,
+                    modifier = Modifier.weight(1f),
+                )
                 com.jiny.finalalarm.ui.components.SecondaryButton(
                     text = "+ 추가",
                     onClick = { nav.navigate(Routes.ALARM_EDIT) },
@@ -89,12 +89,11 @@ fun AlarmListTab(nav: NavController, modifier: Modifier = Modifier, vm: AlarmLis
         }
 
         if (items.isEmpty()) {
-            item { EmptyState(emoji = "💤", text = "조용하네요.\n첫 알람을 만들어봐요") }
+            item { EmptyState(text = "조용하네요.\n첫 알람을 만들어봐요") }
         } else {
             items(items) { a ->
-                val icon = if (a.kind.name == "TEAM_APPROVAL") "👥" else "⏰"
                 ListRow(
-                    headline = "$icon  ${a.label}",
+                    headline = a.label,
                     supporting = "${a.timeOfDay ?: a.oneShotAt ?: "?"} · ${if (a.kind.name == "TEAM_APPROVAL") "팀 승인" else "개인"}",
                     onClick = {
                         nav.navigate(Routes.ALARM_EDIT_WITH_ID.replace("{id}", a.id))

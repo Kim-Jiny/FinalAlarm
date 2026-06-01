@@ -13,10 +13,10 @@ object FA {
     val BgBottom = Color(0xFFFFF0E5)
     val Surface = Color(0xFFFFFCF7)
 
-    // 텍스트: 순흑 대신 따뜻한 다크
-    val Label = Color(0xFF2D2A26)
-    val LabelSecondary = Color(0xFF998C80)
-    val LabelTertiary = Color(0xFFC9BDB1)
+    // 텍스트: 순흑 대신 따뜻한 다크 (대비 강화)
+    val Label = Color(0xFF1F1A14)
+    val LabelSecondary = Color(0xFF6B5E54)
+    val LabelTertiary = Color(0xFFA89B8E)
 
     // 프라이머리: 따뜻한 코랄
     val Primary = Color(0xFFFF7B6B)
@@ -24,8 +24,8 @@ object FA {
     val PrimaryDark = Color(0xFFEB5D4D)       // 그라데이션 하단 / pressed
     val OnPrimary = Color(0xFFFFFFFF)
 
-    // 보조 액센트: 부드러운 라벤더 (시간대·미션 등 보조 정보)
-    val Accent = Color(0xFFA78BFA)
+    // 보조 액센트: 라벤더 (대비 위해 살짝 진하게)
+    val Accent = Color(0xFF7B5BE0)
     val AccentLight = Color(0xFFE9DFFC)
 
     // 성공: 세이지 그린 (해제됨, 완료)

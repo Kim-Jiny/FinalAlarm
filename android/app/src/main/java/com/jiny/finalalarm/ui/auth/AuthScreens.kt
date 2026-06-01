@@ -81,7 +81,6 @@ fun LoginScreen(nav: NavController, vm: AuthVm = hiltViewModel()) {
         ) {
             Spacer(Modifier.weight(0.7f))
             HelloHeader(
-                emoji = "☀️",
                 title = "좋은 아침,\n혼자 일어나기 힘들죠?",
                 subtitle = "친구들이 깨워줄게요.",
             )
@@ -129,7 +128,6 @@ fun SignupScreen(nav: NavController, vm: AuthVm = hiltViewModel()) {
         ) {
             Spacer(Modifier.weight(0.5f))
             HelloHeader(
-                emoji = "🌤️",
                 title = "반가워요!",
                 subtitle = "내일 아침이 기대돼요.",
             )

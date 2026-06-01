@@ -80,7 +80,7 @@ fun SettingsTab(nav: NavController, modifier: Modifier = Modifier, vm: SettingsV
             .padding(horizontal = FaSpacing.lg)
             .verticalScroll(rememberScrollState()),
     ) {
-        HelloHeader(emoji = "🛠️", title = "설정")
+        HelloHeader(title = "설정")
 
         Section("알람") {
             val pm = ctx.getSystemService(Context.POWER_SERVICE) as PowerManager

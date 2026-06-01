@@ -41,13 +41,15 @@ fun WarmBackground(content: @Composable BoxScope.() -> Unit) {
  */
 @Composable
 fun HelloHeader(
-    emoji: String,
     title: String,
     subtitle: String? = null,
+    emoji: String? = null,
 ) {
-    Column(modifier = Modifier.padding(top = FaSpacing.lg)) {
-        Text(emoji, style = MaterialTheme.typography.displayLarge)
-        Spacer(Modifier.height(FaSpacing.sm))
+    Column(modifier = Modifier.padding(top = FaSpacing.xl)) {
+        if (emoji != null) {
+            Text(emoji, style = MaterialTheme.typography.displayLarge)
+            Spacer(Modifier.height(FaSpacing.sm))
+        }
         Text(title, style = MaterialTheme.typography.displayMedium)
         if (subtitle != null) {
             Spacer(Modifier.height(FaSpacing.xs))
@@ -259,15 +261,13 @@ fun FaTextField(
  * 빈 상태 — 이모지 + 다정한 안내.
  */
 @Composable
-fun EmptyState(emoji: String = "🌱", text: String) {
+fun EmptyState(text: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = FaSpacing.xxxl),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(emoji, style = MaterialTheme.typography.displayLarge)
-        Spacer(Modifier.height(FaSpacing.sm))
         Text(
             text,
             style = MaterialTheme.typography.bodyLarge,

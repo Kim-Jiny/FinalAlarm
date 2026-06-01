@@ -49,20 +49,19 @@ class HomeVm @Inject constructor(private val api: FinalAlarmApi) : ViewModel() {
     }
 }
 
-private fun greeting(): Pair<String, String> {
+private fun greeting(): String {
     val h = LocalTime.now().hour
     return when (h) {
-        in 5..10 -> "🌅" to "좋은 아침"
-        in 11..16 -> "☀️" to "안녕하세요"
-        in 17..20 -> "🌇" to "수고했어요"
-        else -> "🌙" to "오늘도 고생했어요"
+        in 5..10 -> "좋은 아침"
+        in 11..16 -> "안녕하세요"
+        in 17..20 -> "수고했어요"
+        else -> "오늘도 고생했어요"
     }
 }
 
 @Composable
 fun HomeTab(nav: NavController, modifier: Modifier = Modifier, vm: HomeVm = hiltViewModel()) {
     val ui by vm.state.collectAsState()
-    val (emoji, greet) = greeting()
     val msg = when {
         ui.active.isNotEmpty() -> "지금 알람이 울리고 있어요"
         ui.upcoming.isEmpty() -> "아직 알람이 없네요. 추가해볼까요?"
@@ -76,14 +75,14 @@ fun HomeTab(nav: NavController, modifier: Modifier = Modifier, vm: HomeVm = hilt
             .padding(horizontal = FaSpacing.lg),
     ) {
         item {
-            HelloHeader(emoji = emoji, title = greet, subtitle = msg)
+            HelloHeader(title = greeting(), subtitle = msg)
         }
 
         if (ui.active.isNotEmpty()) {
             item { Section("지금 울리는 중") {} }
             items(ui.active) { e ->
                 ListRow(
-                    headline = "🔔 ${e.state}",
+                    headline = "${e.state}",
                     supporting = e.senderUserId?.let { "팀원이 깨우는 중" },
                 )
             }
@@ -92,14 +91,13 @@ fun HomeTab(nav: NavController, modifier: Modifier = Modifier, vm: HomeVm = hilt
         if (ui.upcoming.isNotEmpty()) {
             item { Section("오늘의 알람") {} }
             items(ui.upcoming) { a ->
-                val icon = if (a.kind.name == "TEAM_APPROVAL") "👥" else "⏰"
                 ListRow(
-                    headline = "$icon  ${a.label}",
-                    supporting = a.timeOfDay ?: a.oneShotAt ?: "—",
+                    headline = a.label,
+                    supporting = "${a.timeOfDay ?: a.oneShotAt ?: "—"} · ${if (a.kind.name == "TEAM_APPROVAL") "팀 승인" else "개인"}",
                 )
             }
         } else if (ui.active.isEmpty()) {
-            item { EmptyState(emoji = "🌱", text = "첫 알람을 추가해서\n친구들과 함께 일어나봐요") }
+            item { EmptyState(text = "첫 알람을 추가해서\n친구들과 함께 일어나봐요") }
         }
     }
 }

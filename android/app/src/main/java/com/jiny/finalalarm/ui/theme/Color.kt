@@ -1,30 +1,53 @@
 package com.jiny.finalalarm.ui.theme
 
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
-// iOS HIG 기반 미니멀 팔레트. 하나의 primary, 나머지는 중성 그레이.
+/**
+ * "아침" 무드 — 따뜻한 코랄 + 라벤더 포인트.
+ * Forest / Finch / Gentler Streak 같은 인디 앱 톤.
+ */
 object FA {
-    // 라이트 모드
-    val Bg = Color(0xFFFFFFFF)
-    val Surface = Color(0xFFFFFFFF)
-    val Label = Color(0xFF1C1C1E)
-    val LabelSecondary = Color(0xFF8E8E93)
-    val LabelTertiary = Color(0xFFC7C7CC)
-    val Separator = Color(0xFFE5E5EA)
-    val Fill = Color(0xFFF2F2F7)        // 인풋 배경, 선택된 chip 등
+    // 배경: 크림 → 살구. 그라데이션으로 사용.
+    val BgTop = Color(0xFFFFFBF5)
+    val BgBottom = Color(0xFFFFF0E5)
+    val Surface = Color(0xFFFFFCF7)
 
-    // 단 하나의 강조 색
-    val Primary = Color(0xFF007AFF)
+    // 텍스트: 순흑 대신 따뜻한 다크
+    val Label = Color(0xFF2D2A26)
+    val LabelSecondary = Color(0xFF998C80)
+    val LabelTertiary = Color(0xFFC9BDB1)
 
-    // 위험 액션 (삭제·탈퇴)
-    val Destructive = Color(0xFFFF3B30)
+    // 프라이머리: 따뜻한 코랄
+    val Primary = Color(0xFFFF7B6B)
+    val PrimaryLight = Color(0xFFFFA28A)      // 그라데이션 상단
+    val PrimaryDark = Color(0xFFEB5D4D)       // 그라데이션 하단 / pressed
+    val OnPrimary = Color(0xFFFFFFFF)
 
-    // 다크 모드 (자동 적용)
-    val BgDark = Color(0xFF000000)
-    val SurfaceDark = Color(0xFF1C1C1E)
-    val LabelDark = Color(0xFFFFFFFF)
-    val LabelSecondaryDark = Color(0xFF8E8E93)
-    val LabelTertiaryDark = Color(0xFF48484A)
-    val SeparatorDark = Color(0xFF38383A)
-    val FillDark = Color(0xFF2C2C2E)
+    // 보조 액센트: 부드러운 라벤더 (시간대·미션 등 보조 정보)
+    val Accent = Color(0xFFA78BFA)
+    val AccentLight = Color(0xFFE9DFFC)
+
+    // 성공: 세이지 그린 (해제됨, 완료)
+    val Success = Color(0xFF7BB99F)
+    val SuccessLight = Color(0xFFD7EBE0)
+
+    // 위험: 따뜻한 빨강
+    val Destructive = Color(0xFFE85D5D)
+
+    // 라인·필
+    val Separator = Color(0xFFF0E5D8)
+    val Fill = Color(0xFFFFF1E8)              // 인풋 배경
+
+    // 다크 모드 (미세 보정)
+    val BgTopDark = Color(0xFF1A1714)
+    val BgBottomDark = Color(0xFF231D18)
+    val SurfaceDark = Color(0xFF2A2420)
+    val LabelDark = Color(0xFFFAF6F0)
+    val LabelSecondaryDark = Color(0xFFBFB1A3)
+    val SeparatorDark = Color(0xFF3D342C)
+    val FillDark = Color(0xFF3A302A)
+
+    val BgGradient = Brush.verticalGradient(listOf(BgTop, BgBottom))
+    val PrimaryGradient = Brush.verticalGradient(listOf(PrimaryLight, Primary))
 }

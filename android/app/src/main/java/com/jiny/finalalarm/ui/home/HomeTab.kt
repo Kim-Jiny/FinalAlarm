@@ -1,5 +1,6 @@
 package com.jiny.finalalarm.ui.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,13 +18,16 @@ import com.jiny.finalalarm.data.api.AlarmDto
 import com.jiny.finalalarm.data.api.AlarmEventDto
 import com.jiny.finalalarm.data.api.FinalAlarmApi
 import com.jiny.finalalarm.ui.components.EmptyState
+import com.jiny.finalalarm.ui.components.HelloHeader
 import com.jiny.finalalarm.ui.components.ListRow
 import com.jiny.finalalarm.ui.components.Section
+import com.jiny.finalalarm.ui.theme.FA
 import com.jiny.finalalarm.ui.theme.FaSpacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalTime
 import javax.inject.Inject
 
 data class HomeUi(
@@ -45,45 +49,57 @@ class HomeVm @Inject constructor(private val api: FinalAlarmApi) : ViewModel() {
     }
 }
 
+private fun greeting(): Pair<String, String> {
+    val h = LocalTime.now().hour
+    return when (h) {
+        in 5..10 -> "🌅" to "좋은 아침"
+        in 11..16 -> "☀️" to "안녕하세요"
+        in 17..20 -> "🌇" to "수고했어요"
+        else -> "🌙" to "오늘도 고생했어요"
+    }
+}
+
 @Composable
 fun HomeTab(nav: NavController, modifier: Modifier = Modifier, vm: HomeVm = hiltViewModel()) {
     val ui by vm.state.collectAsState()
+    val (emoji, greet) = greeting()
+    val msg = when {
+        ui.active.isNotEmpty() -> "지금 알람이 울리고 있어요"
+        ui.upcoming.isEmpty() -> "아직 알람이 없네요. 추가해볼까요?"
+        else -> "오늘은 ${ui.upcoming.size}개의 알람이 있어요"
+    }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = FaSpacing.screen),
+            .background(FA.BgGradient)
+            .padding(horizontal = FaSpacing.lg),
     ) {
         item {
-            Spacer(Modifier.height(FaSpacing.md))
-            Text("홈", style = MaterialTheme.typography.displayLarge)
-            Spacer(Modifier.height(FaSpacing.xs))
-            Text(
-                "오늘 ${ui.upcoming.size}개 예정",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            HelloHeader(emoji = emoji, title = greet, subtitle = msg)
         }
 
         if (ui.active.isNotEmpty()) {
-            item { Section("진행 중") {} }
+            item { Section("지금 울리는 중") {} }
             items(ui.active) { e ->
                 ListRow(
-                    headline = "${e.state}",
-                    supporting = e.senderUserId?.let { "팀원이 깨움" },
+                    headline = "🔔 ${e.state}",
+                    supporting = e.senderUserId?.let { "팀원이 깨우는 중" },
                 )
             }
         }
 
-        item { Section("다가올 알람") {} }
-        if (ui.upcoming.isEmpty()) {
-            item { EmptyState("등록된 알람이 없습니다") }
-        } else {
+        if (ui.upcoming.isNotEmpty()) {
+            item { Section("오늘의 알람") {} }
             items(ui.upcoming) { a ->
+                val icon = if (a.kind.name == "TEAM_APPROVAL") "👥" else "⏰"
                 ListRow(
-                    headline = a.label,
+                    headline = "$icon  ${a.label}",
                     supporting = a.timeOfDay ?: a.oneShotAt ?: "—",
                 )
             }
+        } else if (ui.active.isEmpty()) {
+            item { EmptyState(emoji = "🌱", text = "첫 알람을 추가해서\n친구들과 함께 일어나봐요") }
         }
     }
 }

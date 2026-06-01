@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -24,8 +25,10 @@ import com.jiny.finalalarm.data.api.FinalAlarmApi
 import com.jiny.finalalarm.ui.Routes
 import com.jiny.finalalarm.ui.components.ErrorText
 import com.jiny.finalalarm.ui.components.FaTextField
+import com.jiny.finalalarm.ui.components.HelloHeader
 import com.jiny.finalalarm.ui.components.ListRow
 import com.jiny.finalalarm.ui.components.Section
+import com.jiny.finalalarm.ui.theme.FA
 import com.jiny.finalalarm.ui.theme.FaSpacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -73,11 +76,11 @@ fun SettingsTab(nav: NavController, modifier: Modifier = Modifier, vm: SettingsV
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = FaSpacing.screen)
+            .background(FA.BgGradient)
+            .padding(horizontal = FaSpacing.lg)
             .verticalScroll(rememberScrollState()),
     ) {
-        Spacer(Modifier.height(FaSpacing.md))
-        Text("설정", style = MaterialTheme.typography.displayLarge)
+        HelloHeader(emoji = "🛠️", title = "설정")
 
         Section("알람") {
             val pm = ctx.getSystemService(Context.POWER_SERVICE) as PowerManager

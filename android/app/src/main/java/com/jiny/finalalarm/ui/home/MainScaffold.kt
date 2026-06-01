@@ -26,7 +26,7 @@ import com.jiny.finalalarm.ui.teams.TeamsTab
 fun MainScaffold(nav: NavController) {
     var tab by remember { mutableStateOf(BottomTab.HOME) }
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = androidx.compose.ui.graphics.Color.Transparent,
         bottomBar = {
             Column {
                 HorizontalDivider(

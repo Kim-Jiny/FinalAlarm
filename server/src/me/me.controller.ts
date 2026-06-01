@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Patch, Post } from '@nestjs/common';
 import { IsOptional, IsString, IsUrl, MinLength } from 'class-validator';
+import { TeamRole } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
 import { CurrentUserId } from '../common/decorators/current-user.decorator';
@@ -90,6 +91,33 @@ export class MeController {
   @Delete()
   @HttpCode(204)
   async deleteMe(@CurrentUserId() userId: string) {
-    await this.prisma.user.delete({ where: { id: userId } });
+    await this.prisma.$transaction(async (tx) => {
+      // 본인이 OWNER인 팀들 처리
+      const ownedTeams = await tx.teamMember.findMany({
+        where: { userId, role: TeamRole.OWNER },
+        select: { teamId: true },
+      });
+
+      for (const { teamId } of ownedTeams) {
+        // 가장 먼저 가입한 ADMIN 찾아서 오너 이양
+        const successor = await tx.teamMember.findFirst({
+          where: { teamId, role: TeamRole.ADMIN, NOT: { userId } },
+          orderBy: { joinedAt: 'asc' },
+        });
+
+        if (successor) {
+          await tx.teamMember.update({
+            where: { teamId_userId: { teamId, userId: successor.userId } },
+            data: { role: TeamRole.OWNER },
+          });
+        } else {
+          // 이양할 ADMIN 없음 → 팀 삭제 (멤버·초대·알람·시간대·이벤트 Cascade)
+          await tx.team.delete({ where: { id: teamId } });
+        }
+      }
+
+      // 본인 삭제 (남은 관계는 Cascade / SetNull로 정리)
+      await tx.user.delete({ where: { id: userId } });
+    });
   }
 }

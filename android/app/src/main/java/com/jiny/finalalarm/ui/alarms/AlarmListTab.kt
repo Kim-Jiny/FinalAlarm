@@ -1,6 +1,7 @@
 package com.jiny.finalalarm.ui.alarms
 
 import android.content.Context
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,6 +20,7 @@ import com.jiny.finalalarm.data.api.FinalAlarmApi
 import com.jiny.finalalarm.ui.Routes
 import com.jiny.finalalarm.ui.components.EmptyState
 import com.jiny.finalalarm.ui.components.ListRow
+import com.jiny.finalalarm.ui.theme.FA
 import com.jiny.finalalarm.ui.theme.FaSpacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -64,32 +66,35 @@ fun AlarmListTab(nav: NavController, modifier: Modifier = Modifier, vm: AlarmLis
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = FaSpacing.screen),
+            .background(FA.BgGradient)
+            .padding(horizontal = FaSpacing.lg),
     ) {
         item {
-            Spacer(Modifier.height(FaSpacing.md))
+            Spacer(Modifier.height(FaSpacing.lg))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             ) {
-                Text(
-                    "알람",
-                    style = MaterialTheme.typography.displayLarge,
-                    modifier = Modifier.weight(1f),
-                )
-                TextButton(onClick = { nav.navigate(Routes.ALARM_EDIT) }) {
-                    Text("추가", style = MaterialTheme.typography.titleLarge)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("⏰", style = MaterialTheme.typography.displayLarge)
+                    Spacer(Modifier.height(FaSpacing.xs))
+                    Text("알람", style = MaterialTheme.typography.displayMedium)
                 }
+                com.jiny.finalalarm.ui.components.SecondaryButton(
+                    text = "+ 추가",
+                    onClick = { nav.navigate(Routes.ALARM_EDIT) },
+                )
             }
             Spacer(Modifier.height(FaSpacing.md))
         }
 
         if (items.isEmpty()) {
-            item { EmptyState("알람을 추가해보세요") }
+            item { EmptyState(emoji = "💤", text = "조용하네요.\n첫 알람을 만들어봐요") }
         } else {
             items(items) { a ->
+                val icon = if (a.kind.name == "TEAM_APPROVAL") "👥" else "⏰"
                 ListRow(
-                    headline = a.label,
+                    headline = "$icon  ${a.label}",
                     supporting = "${a.timeOfDay ?: a.oneShotAt ?: "?"} · ${if (a.kind.name == "TEAM_APPROVAL") "팀 승인" else "개인"}",
                     onClick = {
                         nav.navigate(Routes.ALARM_EDIT_WITH_ID.replace("{id}", a.id))

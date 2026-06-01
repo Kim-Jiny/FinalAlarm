@@ -61,11 +61,11 @@ model RefreshToken {
 model Team {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
-  createdBy String   @map("created_by") @db.Uuid
+  createdBy String?  @map("created_by") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  creator User         @relation("TeamCreator", fields: [createdBy], references: [id])
+  creator User?        @relation("TeamCreator", fields: [createdBy], references: [id], onDelete: SetNull)
   members TeamMember[]
   invites TeamInvite[]
   windows AlarmWindow[]
@@ -102,15 +102,15 @@ model TeamInvite {
   id        String    @id @default(uuid()) @db.Uuid
   teamId    String    @map("team_id") @db.Uuid
   code      String    @unique
-  createdBy String    @map("created_by") @db.Uuid
+  createdBy String?   @map("created_by") @db.Uuid
   expiresAt DateTime  @map("expires_at") @db.Timestamptz
   maxUses   Int?      @map("max_uses")
   useCount  Int       @default(0) @map("use_count")
   revokedAt DateTime? @map("revoked_at") @db.Timestamptz
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
-  team    Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  creator User @relation("InviteCreator", fields: [createdBy], references: [id])
+  team    Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  creator User? @relation("InviteCreator", fields: [createdBy], references: [id], onDelete: SetNull)
 
   @@index([teamId])
   @@map("alarm_team_invites")

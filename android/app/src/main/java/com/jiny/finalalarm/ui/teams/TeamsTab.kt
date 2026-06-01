@@ -1,5 +1,6 @@
 package com.jiny.finalalarm.ui.teams
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,7 +15,10 @@ import com.jiny.finalalarm.data.api.FinalAlarmApi
 import com.jiny.finalalarm.data.api.TeamSummary
 import com.jiny.finalalarm.ui.Routes
 import com.jiny.finalalarm.ui.components.EmptyState
+import com.jiny.finalalarm.ui.components.HelloHeader
 import com.jiny.finalalarm.ui.components.ListRow
+import com.jiny.finalalarm.ui.components.SecondaryButton
+import com.jiny.finalalarm.ui.theme.FA
 import com.jiny.finalalarm.ui.theme.FaSpacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,36 +43,43 @@ fun TeamsTab(nav: NavController, modifier: Modifier = Modifier, vm: TeamsTabVm =
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = FaSpacing.screen),
+            .background(FA.BgGradient)
+            .padding(horizontal = FaSpacing.lg),
     ) {
         item {
-            Spacer(Modifier.height(FaSpacing.md))
+            Spacer(Modifier.height(FaSpacing.lg))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             ) {
-                Text(
-                    "팀",
-                    style = MaterialTheme.typography.displayLarge,
-                    modifier = Modifier.weight(1f),
-                )
-                TextButton(onClick = { nav.navigate(Routes.TEAM_CREATE) }) {
-                    Text("만들기", style = MaterialTheme.typography.titleLarge)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("👯", style = MaterialTheme.typography.displayLarge)
+                    Spacer(Modifier.height(FaSpacing.xs))
+                    Text("팀", style = MaterialTheme.typography.displayMedium)
                 }
+                SecondaryButton(
+                    text = "+ 만들기",
+                    onClick = { nav.navigate(Routes.TEAM_CREATE) },
+                )
             }
             Spacer(Modifier.height(FaSpacing.md))
             ListRow(
-                headline = "초대 코드로 가입",
+                headline = "🎟  초대 코드로 가입",
                 onClick = { nav.navigate(Routes.joinTeamRoute()) },
             )
         }
 
         if (teams.isEmpty()) {
-            item { EmptyState("팀이 없어요. 만들거나 가입해보세요.") }
+            item { EmptyState(emoji = "🤝", text = "함께 일어날 친구가 없네요.\n팀을 만들어 초대해보세요") }
         } else {
             items(teams) { t ->
+                val roleEmoji = when (t.role) {
+                    com.jiny.finalalarm.data.api.TeamRole.OWNER -> "👑"
+                    com.jiny.finalalarm.data.api.TeamRole.ADMIN -> "⭐"
+                    com.jiny.finalalarm.data.api.TeamRole.MEMBER -> "🙋"
+                }
                 ListRow(
-                    headline = t.name,
+                    headline = "$roleEmoji  ${t.name}",
                     supporting = when (t.role) {
                         com.jiny.finalalarm.data.api.TeamRole.OWNER -> "오너"
                         com.jiny.finalalarm.data.api.TeamRole.ADMIN -> "관리자"

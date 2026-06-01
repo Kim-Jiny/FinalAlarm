@@ -13,6 +13,7 @@ import app.finalalarm.core.network.userMessage
 import app.finalalarm.data.api.FinalAlarmApi
 import app.finalalarm.data.api.PushAlarmReq
 import app.finalalarm.data.api.TeamMemberDto
+import app.finalalarm.ui.util.assistedViewModel
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -65,7 +66,7 @@ class PushAlarmVmHost @Inject constructor(val factory: PushAlarmVmFactory) : Vie
 @Composable
 fun PushAlarmScreen(nav: NavController, teamId: String) {
     val host = hiltViewModel<PushAlarmVmHost>()
-    val vm = remember(teamId) { host.factory.create(teamId) }
+    val vm = assistedViewModel(teamId) { host.factory.create(teamId) }
     val s by vm.state.collectAsState()
     LaunchedEffect(s.sent) { if (s.sent) nav.popBackStack() }
     Scaffold(

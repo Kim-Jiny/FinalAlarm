@@ -14,6 +14,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import app.finalalarm.core.network.userMessage
 import app.finalalarm.data.api.CreateInviteReq
+import app.finalalarm.ui.util.assistedViewModel
 import app.finalalarm.data.api.CreateTeamReq
 import app.finalalarm.data.api.FinalAlarmApi
 import app.finalalarm.data.api.InviteDto
@@ -84,7 +85,7 @@ class TeamDetailVmHost @Inject constructor(val factory: TeamDetailVmFactory) : V
 @Composable
 fun TeamDetailScreen(nav: NavController, teamId: String) {
     val host = hiltViewModel<TeamDetailVmHost>()
-    val vm = remember(teamId) { host.factory.create(teamId) }
+    val vm = assistedViewModel(teamId) { host.factory.create(teamId) }
     val team by vm.state.collectAsState()
     Scaffold(topBar = { TopAppBar(title = { Text(team?.name ?: "팀") }) }) { inner ->
         Column(modifier = Modifier.padding(inner).padding(16.dp)) {
@@ -148,7 +149,7 @@ class TeamInviteVmHost @Inject constructor(val factory: TeamInviteVmFactory) : V
 @Composable
 fun TeamInviteScreen(nav: NavController, teamId: String) {
     val host = hiltViewModel<TeamInviteVmHost>()
-    val vm = remember(teamId) { host.factory.create(teamId) }
+    val vm = assistedViewModel(teamId) { host.factory.create(teamId) }
     val invites by vm.invites.collectAsState()
     val clip: ClipboardManager = LocalClipboardManager.current
 

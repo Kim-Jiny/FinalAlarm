@@ -14,6 +14,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import app.finalalarm.core.network.userMessage
 import app.finalalarm.data.api.FinalAlarmApi
+import app.finalalarm.ui.util.assistedViewModel
 import app.finalalarm.data.api.UnlockRequestDto
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -56,7 +57,7 @@ class UnlockRequestDetailHost @Inject constructor(val factory: UnlockRequestDeta
 @Composable
 fun UnlockRequestDetailScreen(nav: NavController, id: String) {
     val host = hiltViewModel<UnlockRequestDetailHost>()
-    val vm = remember(id) { host.factory.create(id) }
+    val vm = assistedViewModel(id) { host.factory.create(id) }
     val req by vm.state.collectAsState()
     LaunchedEffect(vm.done) { if (vm.done) nav.popBackStack() }
 

@@ -7,8 +7,6 @@ import android.content.Intent
 import app.finalalarm.data.api.AlarmDto
 import app.finalalarm.data.api.ScheduleType
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.time.DayOfWeek
-import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -24,10 +22,12 @@ class AlarmScheduler @Inject constructor(
     fun schedule(alarm: AlarmDto, defaultPayload: AlarmRingPayload) {
         if (!alarm.active) return
         val triggerAt = nextTriggerEpochMillis(alarm) ?: return
+        val launchIntent = ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)
+            ?: Intent(Intent.ACTION_MAIN).apply { setPackage(ctx.packageName) }
         val showIntent = PendingIntent.getActivity(
             ctx,
             alarm.id.hashCode(),
-            ctx.packageManager.getLaunchIntentForPackage(ctx.packageName),
+            launchIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val fireIntent = Intent(ctx, AlarmReceiver::class.java).apply {

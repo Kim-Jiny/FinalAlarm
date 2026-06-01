@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
@@ -49,6 +50,8 @@ class EventReconcileWorker @AssistedInject constructor(
     }
 
     companion object {
+        private const val UNIQUE_NAME = "event-reconcile"
+
         fun enqueue(ctx: Context) {
             val req = OneTimeWorkRequestBuilder<EventReconcileWorker>()
                 .setConstraints(
@@ -57,7 +60,8 @@ class EventReconcileWorker @AssistedInject constructor(
                         .build(),
                 )
                 .build()
-            WorkManager.getInstance(ctx).enqueue(req)
+            WorkManager.getInstance(ctx)
+                .enqueueUniqueWork(UNIQUE_NAME, ExistingWorkPolicy.KEEP, req)
         }
     }
 }

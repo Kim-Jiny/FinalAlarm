@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.finalalarm.ui.util.assistedViewModel
 import android.content.Context
 import app.finalalarm.core.alarm.AlarmRingPayload
 import app.finalalarm.core.network.userMessage
@@ -125,8 +126,8 @@ interface RingingVmFactory { fun create(eventId: String): RingingVm }
 
 @Composable
 fun RingingRoot(payload: AlarmRingPayload, onFinished: () -> Unit) {
-    val factory = hiltViewModel<RingingVmHostVm>().factory
-    val vm = remember(payload.eventId) { factory.create(payload.eventId) }
+    val host = hiltViewModel<RingingVmHostVm>()
+    val vm: RingingVm = assistedViewModel(payload.eventId) { host.factory.create(payload.eventId) }
     val ui by vm.state.collectAsState()
 
     LaunchedEffect(ui.phase) {

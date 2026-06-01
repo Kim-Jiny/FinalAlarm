@@ -11,9 +11,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.core.content.ContextCompat
 import app.finalalarm.core.alarm.AlarmForegroundService
 import app.finalalarm.core.alarm.AlarmRingPayload
 import dagger.hilt.android.AndroidEntryPoint
@@ -48,8 +46,12 @@ class RingingActivity : ComponentActivity() {
                 }
             }
         }
-        registerReceiver(approvalReceiver, IntentFilter("app.finalalarm.UNLOCK_APPROVED"),
-            RECEIVER_NOT_EXPORTED)
+        ContextCompat.registerReceiver(
+            this,
+            approvalReceiver,
+            IntentFilter("app.finalalarm.UNLOCK_APPROVED"),
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
     }
 
     override fun onDestroy() {

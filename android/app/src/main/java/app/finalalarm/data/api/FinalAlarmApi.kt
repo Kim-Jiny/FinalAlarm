@@ -27,6 +27,9 @@ interface FinalAlarmApi {
     @DELETE("me")
     suspend fun deleteMe()
 
+    @POST("me/password")
+    suspend fun changePassword(@Body req: ChangePasswordReq)
+
     // ---- Push tokens ----
     @POST("push-tokens")
     suspend fun registerPushToken(@Body req: RegisterPushTokenReq): PushTokenDto

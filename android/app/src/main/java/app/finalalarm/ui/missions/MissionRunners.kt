@@ -121,8 +121,7 @@ fun ShakeMissionRunner(targetCount: Int, onComplete: (count: Int) -> Unit) {
     }
 }
 
-// ---- 사진 미션 (QR/Barcode) ----
-// CameraX 미리보기 + MLKit BarcodeScanner. expectedCode와 매칭되면 미션 완료.
+// ---- 사진 미션 (QR/Barcode/REFERENCE_IMAGE) ----
 @Composable
 fun PhotoMissionRunner(
     mode: String,
@@ -131,20 +130,55 @@ fun PhotoMissionRunner(
 ) {
     when (mode) {
         "QR", "BARCODE" -> BarcodeMissionRunner(mode, expectedCode, onComplete)
-        else -> ReferenceImageMissionRunner(onComplete)
+        else -> ReferenceImageMissionRunner(expectedCode, onComplete)
     }
 }
 
+/**
+ * 기준 이미지 aHash와 촬영 이미지 aHash의 hamming 거리로 매칭.
+ * expectedCode는 미션 생성 시 저장된 64bit hex hash (aHash 결과).
+ */
 @Composable
-private fun ReferenceImageMissionRunner(onComplete: (String) -> Unit) {
-    Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
-        Text("사진 인증 (사물)", style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(16.dp))
-        Text("이미지 매칭은 추후 구현 — 지금은 더미 통과")
-        Spacer(Modifier.height(16.dp))
-        Button(
-            onClick = { onComplete("dummy://mission-reference-image") },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text("통과 (임시)") }
+private fun ReferenceImageMissionRunner(
+    expectedHashHex: String?,
+    onComplete: (String) -> Unit,
+) {
+    val expected = remember(expectedHashHex) { expectedHashHex?.let { ImageHash.fromHex(it) } }
+    var lastDistance by remember { mutableStateOf<Int?>(null) }
+    var status by remember { mutableStateOf("기준 사진과 같은 장면을 비추고 [촬영]을 누르세요.") }
+
+    if (expected == null) {
+        Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
+            Text("사진 인증", style = MaterialTheme.typography.headlineMedium)
+            Spacer(Modifier.height(16.dp))
+            Text("기준 사진이 등록되지 않은 미션입니다. 미션 편집에서 사진을 등록해주세요.")
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = { onComplete("no-reference") }, modifier = Modifier.fillMaxWidth()) {
+                Text("통과 (기준 없음)")
+            }
+        }
+        return
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.weight(1f)) {
+            CameraCapture(
+                onCancel = { /* 미션은 취소 불가 */ },
+                onCapture = { bmp ->
+                    val h = ImageHash.aHash(bmp)
+                    val d = ImageHash.hamming(h, expected)
+                    lastDistance = d
+                    if (d <= ImageHash.MATCH_THRESHOLD) {
+                        onComplete("ahash:${ImageHash.toHex(h)}")
+                    } else {
+                        status = "다른 장면 같아요 (차이 $d / 임계 ${ImageHash.MATCH_THRESHOLD}). 다시 시도해주세요."
+                    }
+                },
+            )
+        }
+        Text(status, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(8.dp))
+        lastDistance?.let {
+            Text("최근 차이: $it", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 8.dp))
+        }
     }
 }

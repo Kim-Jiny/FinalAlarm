@@ -25,6 +25,7 @@ import app.finalalarm.ui.teams.TeamInviteScreen
 import app.finalalarm.ui.windows.WindowEditScreen
 import app.finalalarm.ui.windows.WindowListScreen
 import app.finalalarm.ui.pushalarm.PushAlarmScreen
+import app.finalalarm.ui.history.HistoryScreen
 import app.finalalarm.ui.inbox.InboxListScreen
 import app.finalalarm.ui.inbox.UnlockRequestDetailScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -54,6 +55,7 @@ object Routes {
     const val PUSH_ALARM = "push-alarm/{teamId}"
     const val INBOX_LIST = "inbox/{teamId}"
     const val UNLOCK_DETAIL = "inbox/request/{id}"
+    const val HISTORY = "history"
 }
 
 @HiltViewModel
@@ -146,5 +148,7 @@ fun RootNav(initialInviteCode: String? = null) {
             Routes.UNLOCK_DETAIL,
             arguments = listOf(navArgument("id") { type = NavType.StringType }),
         ) { entry -> UnlockRequestDetailScreen(nav, entry.arguments!!.getString("id")!!) }
+
+        composable(Routes.HISTORY) { HistoryScreen(nav) }
     }
 }

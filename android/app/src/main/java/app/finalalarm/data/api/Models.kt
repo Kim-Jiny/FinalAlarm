@@ -48,6 +48,9 @@ data class UpdateMeReq(
     val timezone: String? = null,
 )
 
+@Serializable
+data class ChangePasswordReq(val currentPassword: String, val newPassword: String)
+
 // ---------- Push tokens ----------
 @Serializable
 enum class DevicePlatform { ANDROID, IOS }

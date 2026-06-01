@@ -32,8 +32,11 @@ export class MissionsService {
           if (typeof expectedCode !== 'string' || expectedCode.length === 0 || expectedCode.length > 4096) {
             throw new AppError('VALIDATION_ERROR', 'expectedCode must be 1-4096 char string');
           }
-          if (mode === 'REFERENCE_IMAGE') {
-            throw new AppError('VALIDATION_ERROR', 'expectedCode not allowed for REFERENCE_IMAGE mode');
+          // QR/BARCODE: 기대 raw value 문자열
+          // REFERENCE_IMAGE: 16자 hex aHash (예: "ff1c3b0080404040")
+          if (mode === 'REFERENCE_IMAGE' && !/^[0-9a-fA-F]{16}$/.test(expectedCode)) {
+            throw new AppError('VALIDATION_ERROR',
+              'REFERENCE_IMAGE expectedCode must be 16-char hex (aHash)');
           }
         }
         break;

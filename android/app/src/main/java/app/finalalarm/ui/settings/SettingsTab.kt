@@ -15,8 +15,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import app.finalalarm.core.network.userMessage
 import app.finalalarm.data.AuthRepository
+import app.finalalarm.data.api.ChangePasswordReq
 import app.finalalarm.data.api.FinalAlarmApi
 import app.finalalarm.ui.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,6 +31,8 @@ class SettingsVm @Inject constructor(
     private val api: FinalAlarmApi,
 ) : ViewModel() {
     var error by mutableStateOf<String?>(null)
+    var pwdError by mutableStateOf<String?>(null)
+    var pwdSuccess by mutableStateOf(false)
     var deleted by mutableStateOf(false)
 
     fun logout() = viewModelScope.launch { authRepo.logout() }
@@ -37,17 +41,31 @@ class SettingsVm @Inject constructor(
         error = null
         runCatching { api.deleteMe() }
             .onSuccess {
-                runCatching { authRepo.logout() }   // refresh 토큰 무효화 시도 (이미 401일 수 있음)
+                runCatching { authRepo.logout() }
                 deleted = true
             }
             .onFailure { error = it.userMessage() }
     }
+
+    fun changePassword(current: String, new: String) = viewModelScope.launch {
+        pwdError = null
+        pwdSuccess = false
+        runCatching { api.changePassword(ChangePasswordReq(current, new)) }
+            .onSuccess {
+                pwdSuccess = true
+                // 서버가 모든 refresh 토큰 revoke → 다음 401 시 강제 로그아웃 발생
+            }
+            .onFailure { pwdError = it.userMessage() }
+    }
+
+    fun clearPwdState() { pwdError = null; pwdSuccess = false }
 }
 
 @Composable
 fun SettingsTab(nav: NavController, modifier: Modifier = Modifier, vm: SettingsVm = hiltViewModel()) {
     val ctx = LocalContext.current
     var confirmDelete by remember { mutableStateOf(false) }
+    var showPwdDialog by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         Text("설정", style = MaterialTheme.typography.titleLarge)
@@ -85,7 +103,19 @@ fun SettingsTab(nav: NavController, modifier: Modifier = Modifier, vm: SettingsV
             modifier = Modifier.fillMaxWidth(),
         ) { Text("알람 시간대 관리") }
 
+        Spacer(Modifier.height(8.dp))
+        OutlinedButton(
+            onClick = { nav.navigate(Routes.HISTORY) },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("알람 히스토리") }
+
         Spacer(Modifier.height(16.dp))
+        OutlinedButton(
+            onClick = { showPwdDialog = true },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("비밀번호 변경") }
+
+        Spacer(Modifier.height(8.dp))
         OutlinedButton(
             onClick = vm::logout,
             modifier = Modifier.fillMaxWidth(),
@@ -122,4 +152,67 @@ fun SettingsTab(nav: NavController, modifier: Modifier = Modifier, vm: SettingsV
             },
         )
     }
+
+    if (showPwdDialog) {
+        ChangePasswordDialog(
+            vm = vm,
+            onDismiss = { showPwdDialog = false; vm.clearPwdState() },
+        )
+    }
+}
+
+@Composable
+private fun ChangePasswordDialog(vm: SettingsVm, onDismiss: () -> Unit) {
+    var current by remember { mutableStateOf("") }
+    var new by remember { mutableStateOf("") }
+    var confirm by remember { mutableStateOf("") }
+
+    LaunchedEffect(vm.pwdSuccess) { if (vm.pwdSuccess) onDismiss() }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("비밀번호 변경") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = current, onValueChange = { current = it },
+                    label = { Text("현재 비밀번호") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = new, onValueChange = { new = it },
+                    label = { Text("새 비밀번호 (8자 이상)") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = confirm, onValueChange = { confirm = it },
+                    label = { Text("새 비밀번호 확인") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                vm.pwdError?.let {
+                    Spacer(Modifier.height(8.dp))
+                    Text(it, color = MaterialTheme.colorScheme.error)
+                }
+                if (new.isNotEmpty() && confirm.isNotEmpty() && new != confirm) {
+                    Spacer(Modifier.height(4.dp))
+                    Text("새 비밀번호가 일치하지 않습니다", color = MaterialTheme.colorScheme.error)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = current.isNotBlank() && new.length >= 8 && new == confirm,
+                onClick = { vm.changePassword(current, new) },
+            ) { Text("변경") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } },
+    )
 }

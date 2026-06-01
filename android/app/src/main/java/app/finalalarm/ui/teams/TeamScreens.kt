@@ -90,6 +90,14 @@ class TeamDetailVm @AssistedInject constructor(
             .onFailure { error = it.userMessage() }
         refresh()
     }
+
+    fun changeRole(userId: String, role: app.finalalarm.data.api.TeamRole) = viewModelScope.launch {
+        error = null
+        runCatching {
+            api.changeMemberRole(teamId, userId, app.finalalarm.data.api.ChangeRoleReq(role))
+        }.onFailure { error = it.userMessage() }
+        refresh()
+    }
 }
 
 @AssistedFactory
@@ -136,15 +144,25 @@ fun TeamDetailScreen(nav: NavController, teamId: String) {
             Spacer(Modifier.height(16.dp))
             Text("멤버", style = MaterialTheme.typography.titleMedium)
             team?.members?.forEach { m ->
+                val isOwner = myRoleInTeam == app.finalalarm.data.api.TeamRole.OWNER
+                val canModerate = isOwner || myRoleInTeam == app.finalalarm.data.api.TeamRole.ADMIN
                 ListItem(
                     headlineContent = { Text(m.user.displayName) },
                     supportingContent = { Text("${m.role}") },
                     trailingContent = {
-                        // OWNER/ADMIN만 강퇴 가능 (OWNER 자체는 강퇴 불가)
-                        if ((myRoleInTeam == app.finalalarm.data.api.TeamRole.OWNER ||
-                                myRoleInTeam == app.finalalarm.data.api.TeamRole.ADMIN) &&
-                            m.role != app.finalalarm.data.api.TeamRole.OWNER) {
-                            TextButton(onClick = { vm.kickMember(m.user.id) }) { Text("강퇴") }
+                        Row {
+                            // OWNER만 권한 변경 가능
+                            if (isOwner && m.role != app.finalalarm.data.api.TeamRole.OWNER) {
+                                val nextRole = if (m.role == app.finalalarm.data.api.TeamRole.ADMIN)
+                                    app.finalalarm.data.api.TeamRole.MEMBER
+                                else app.finalalarm.data.api.TeamRole.ADMIN
+                                TextButton(onClick = { vm.changeRole(m.user.id, nextRole) }) {
+                                    Text("→ $nextRole")
+                                }
+                            }
+                            if (canModerate && m.role != app.finalalarm.data.api.TeamRole.OWNER) {
+                                TextButton(onClick = { vm.kickMember(m.user.id) }) { Text("강퇴") }
+                            }
                         }
                     },
                 )

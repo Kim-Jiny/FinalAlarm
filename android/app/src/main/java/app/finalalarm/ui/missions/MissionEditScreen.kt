@@ -75,7 +75,8 @@ class MissionEditVm @Inject constructor(private val api: FinalAlarmApi) : ViewMo
             )
             MissionType.PHOTO -> buildMap {
                 put("mode", JsonPrimitive(s.photoMode))
-                if (s.expectedCode.isNotBlank() && (s.photoMode == "QR" || s.photoMode == "BARCODE")) {
+                if (s.expectedCode.isNotBlank()) {
+                    // QR/BARCODE: 기대 raw value. REFERENCE_IMAGE: aHash hex.
                     put("expectedCode", JsonPrimitive(s.expectedCode.trim()))
                 }
             }
@@ -170,6 +171,38 @@ fun MissionEditScreen(nav: NavController, missionId: String?, vm: MissionEditVm 
                             label = { Text("기대 코드 (비우면 어떤 코드든 통과)") },
                             modifier = Modifier.fillMaxWidth(),
                         )
+                    }
+                    if (s.photoMode == "REFERENCE_IMAGE") {
+                        Spacer(Modifier.height(8.dp))
+                        var capturing by remember { mutableStateOf(false) }
+                        if (s.expectedCode.isNotBlank()) {
+                            Text("기준 사진 등록됨 (해시: ${s.expectedCode.take(8)}…)")
+                        } else {
+                            Text("기준 사진이 등록되지 않았습니다.", color = MaterialTheme.colorScheme.error)
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        OutlinedButton(onClick = { capturing = true }) {
+                            Text(if (s.expectedCode.isBlank()) "기준 사진 촬영" else "기준 사진 다시 촬영")
+                        }
+                        if (capturing) {
+                            androidx.compose.ui.window.Dialog(
+                                onDismissRequest = { capturing = false },
+                                properties = androidx.compose.ui.window.DialogProperties(
+                                    usePlatformDefaultWidth = false,
+                                ),
+                            ) {
+                                Surface(modifier = Modifier.fillMaxSize()) {
+                                    CameraCapture(
+                                        onCancel = { capturing = false },
+                                        onCapture = { bmp ->
+                                            val hex = ImageHash.toHex(ImageHash.aHash(bmp))
+                                            vm.onExpectedCode(hex)
+                                            capturing = false
+                                        },
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
                 MissionType.SHAKE -> {

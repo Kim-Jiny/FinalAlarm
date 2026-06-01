@@ -39,6 +39,7 @@ class HistoryVm @Inject constructor(private val api: FinalAlarmApi) : ViewModel(
 
 @Composable
 fun HistoryScreen(nav: NavController, vm: HistoryVm = hiltViewModel()) {
+    com.jiny.finalalarm.ui.components.OnResume { vm.refresh() }
     val events by vm.state.collectAsState()
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -57,6 +58,7 @@ fun HistoryScreen(nav: NavController, vm: HistoryVm = hiltViewModel()) {
                 .padding(inner)
                 .fillMaxSize()
                 .padding(horizontal = FaSpacing.screen),
+            contentPadding = PaddingValues(bottom = FaSpacing.xxl),
         ) {
             if (events.isEmpty() && !vm.loading) {
                 item { EmptyState("기록이 없습니다") }

@@ -24,6 +24,21 @@ import com.jiny.finalalarm.ui.theme.FA
 import com.jiny.finalalarm.ui.theme.FaSpacing
 
 /**
+ * 화면이 ON_RESUME 될 때마다 콜백 실행 (뒤로가기로 돌아왔을 때 list 갱신용).
+ */
+@Composable
+fun OnResume(callback: () -> Unit) {
+    val owner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(owner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) callback()
+        }
+        owner.lifecycle.addObserver(observer)
+        onDispose { owner.lifecycle.removeObserver(observer) }
+    }
+}
+
+/**
  * 따뜻한 그라데이션 배경. 거의 모든 화면에서 사용.
  */
 @Composable

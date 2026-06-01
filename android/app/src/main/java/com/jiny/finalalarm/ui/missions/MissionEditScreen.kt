@@ -1,9 +1,17 @@
 package com.jiny.finalalarm.ui.missions
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -13,6 +21,16 @@ import com.jiny.finalalarm.core.network.userMessage
 import com.jiny.finalalarm.data.api.CreateMissionReq
 import com.jiny.finalalarm.data.api.FinalAlarmApi
 import com.jiny.finalalarm.data.api.MissionType
+import com.jiny.finalalarm.ui.components.ErrorText
+import com.jiny.finalalarm.ui.components.FaTextField
+import com.jiny.finalalarm.ui.components.HelloHeader
+import com.jiny.finalalarm.ui.components.ListRow
+import com.jiny.finalalarm.ui.components.PrimaryButton
+import com.jiny.finalalarm.ui.components.SecondaryButton
+import com.jiny.finalalarm.ui.components.Section
+import com.jiny.finalalarm.ui.components.WarmBackground
+import com.jiny.finalalarm.ui.theme.FA
+import com.jiny.finalalarm.ui.theme.FaSpacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -76,7 +94,6 @@ class MissionEditVm @Inject constructor(private val api: FinalAlarmApi) : ViewMo
             MissionType.PHOTO -> buildMap {
                 put("mode", JsonPrimitive(s.photoMode))
                 if (s.expectedCode.isNotBlank()) {
-                    // QR/BARCODE: 기대 raw value. REFERENCE_IMAGE: aHash hex.
                     put("expectedCode", JsonPrimitive(s.expectedCode.trim()))
                 }
             }
@@ -107,120 +124,233 @@ fun MissionEditScreen(nav: NavController, missionId: String?, vm: MissionEditVm 
     LaunchedEffect(missionId) { if (missionId != null) vm.loadExisting(missionId) }
     LaunchedEffect(s.saved) { if (s.saved) nav.popBackStack() }
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text(if (missionId == null) "미션 추가" else "미션 편집") }) },
-        bottomBar = {
-            Button(onClick = vm::save, enabled = !s.saving, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                Text(if (s.saving) "저장 중…" else "저장")
+    WarmBackground {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.systemBars),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = FaSpacing.sm, vertical = FaSpacing.sm),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = { nav.popBackStack() }) { Text("뒤로") }
+                Spacer(Modifier.weight(1f))
             }
-        },
-    ) { inner ->
-        Column(modifier = Modifier.padding(inner).padding(16.dp)) {
-            OutlinedTextField(s.name, vm::onName, label = { Text("미션 이름") }, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.height(16.dp))
-            Text("미션 종류", style = MaterialTheme.typography.titleSmall)
-            Row {
-                MissionType.entries.forEach { t ->
-                    FilterChip(
-                        selected = s.type == t,
-                        onClick = { vm.onType(t) },
-                        label = { Text(t.name) },
-                        modifier = Modifier.padding(end = 8.dp),
-                    )
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = FaSpacing.lg),
+            ) {
+                HelloHeader(
+                    title = if (missionId == null) "새 미션" else "미션 수정",
+                    subtitle = "알람을 끄기 전에 풀어야 해요",
+                )
+
+                Section("이름") {
+                    FaTextField(s.name, vm::onName, "미션 이름 (예: 아침 수학)")
                 }
-            }
-            Spacer(Modifier.height(16.dp))
-            when (s.type) {
-                MissionType.MATH -> {
-                    Text("난이도")
-                    Row {
-                        listOf("easy", "medium", "hard").forEach {
-                            FilterChip(
-                                selected = s.difficulty == it,
-                                onClick = { vm.onDifficulty(it) },
-                                label = { Text(it) },
-                                modifier = Modifier.padding(end = 4.dp),
+
+                Section("종류") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(FaSpacing.sm),
+                    ) {
+                        MissionType.entries.forEach { t ->
+                            ChoicePill(
+                                text = when (t) {
+                                    MissionType.MATH -> "수학"
+                                    MissionType.PHOTO -> "사진"
+                                    MissionType.SHAKE -> "흔들기"
+                                },
+                                selected = s.type == t,
+                                onClick = { vm.onType(t) },
+                                modifier = Modifier.weight(1f),
                             )
                         }
                     }
-                    Spacer(Modifier.height(8.dp))
-                    Text("문제 수: ${s.questionCount}")
-                    Slider(
-                        value = s.questionCount.toFloat(),
-                        onValueChange = { vm.onQuestionCount(it.toInt()) },
-                        valueRange = 1f..10f, steps = 8,
-                    )
                 }
-                MissionType.PHOTO -> {
-                    Text("모드")
-                    Row {
-                        listOf("QR", "BARCODE", "REFERENCE_IMAGE").forEach {
-                            FilterChip(
-                                selected = s.photoMode == it,
-                                onClick = { vm.onPhotoMode(it) },
-                                label = { Text(it) },
-                                modifier = Modifier.padding(end = 4.dp),
-                            )
-                        }
-                    }
-                    if (s.photoMode == "QR" || s.photoMode == "BARCODE") {
-                        Spacer(Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = s.expectedCode,
-                            onValueChange = vm::onExpectedCode,
-                            label = { Text("기대 코드 (비우면 어떤 코드든 통과)") },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-                    if (s.photoMode == "REFERENCE_IMAGE") {
-                        Spacer(Modifier.height(8.dp))
-                        var capturing by remember { mutableStateOf(false) }
-                        if (s.expectedCode.isNotBlank()) {
-                            Text("기준 사진 등록됨 (해시: ${s.expectedCode.take(8)}…)")
-                        } else {
-                            Text("기준 사진이 등록되지 않았습니다.", color = MaterialTheme.colorScheme.error)
-                        }
-                        Spacer(Modifier.height(4.dp))
-                        OutlinedButton(onClick = { capturing = true }) {
-                            Text(if (s.expectedCode.isBlank()) "기준 사진 촬영" else "기준 사진 다시 촬영")
-                        }
-                        if (capturing) {
-                            androidx.compose.ui.window.Dialog(
-                                onDismissRequest = { capturing = false },
-                                properties = androidx.compose.ui.window.DialogProperties(
-                                    usePlatformDefaultWidth = false,
-                                ),
+
+                when (s.type) {
+                    MissionType.MATH -> {
+                        Section("난이도") {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(FaSpacing.sm),
                             ) {
-                                Surface(modifier = Modifier.fillMaxSize()) {
-                                    CameraCapture(
-                                        onCancel = { capturing = false },
-                                        onCapture = { bmp ->
-                                            val hex = ImageHash.toHex(ImageHash.aHash(bmp))
-                                            vm.onExpectedCode(hex)
-                                            capturing = false
-                                        },
+                                listOf("easy" to "쉬움", "medium" to "보통", "hard" to "어려움").forEach { (v, l) ->
+                                    ChoicePill(
+                                        text = l,
+                                        selected = s.difficulty == v,
+                                        onClick = { vm.onDifficulty(v) },
+                                        modifier = Modifier.weight(1f),
                                     )
                                 }
                             }
                         }
+                        Section("문제 수") {
+                            Text(
+                                "${s.questionCount}문제",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Slider(
+                                value = s.questionCount.toFloat(),
+                                onValueChange = { vm.onQuestionCount(it.toInt()) },
+                                valueRange = 1f..10f, steps = 8,
+                                colors = SliderDefaults.colors(
+                                    thumbColor = MaterialTheme.colorScheme.primary,
+                                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                                ),
+                            )
+                        }
+                    }
+                    MissionType.PHOTO -> {
+                        Section("모드") {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(FaSpacing.sm),
+                            ) {
+                                listOf("QR" to "QR", "BARCODE" to "바코드", "REFERENCE_IMAGE" to "기준 사진").forEach { (v, l) ->
+                                    ChoicePill(
+                                        text = l,
+                                        selected = s.photoMode == v,
+                                        onClick = { vm.onPhotoMode(v) },
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                }
+                            }
+                        }
+                        if (s.photoMode == "QR" || s.photoMode == "BARCODE") {
+                            Section("기대 코드 (선택)") {
+                                FaTextField(s.expectedCode, vm::onExpectedCode, "비우면 어떤 코드든 통과")
+                            }
+                        }
+                        if (s.photoMode == "REFERENCE_IMAGE") {
+                            Section("기준 사진") {
+                                var capturing by remember { mutableStateOf(false) }
+                                if (s.expectedCode.isNotBlank()) {
+                                    Text(
+                                        "등록됨 (해시 ${s.expectedCode.take(8)}…)",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                } else {
+                                    Text(
+                                        "기준 사진이 등록되지 않았어요",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                }
+                                Spacer(Modifier.height(FaSpacing.sm))
+                                SecondaryButton(
+                                    text = if (s.expectedCode.isBlank()) "기준 사진 촬영" else "다시 촬영",
+                                    onClick = { capturing = true },
+                                )
+                                if (capturing) {
+                                    androidx.compose.ui.window.Dialog(
+                                        onDismissRequest = { capturing = false },
+                                        properties = androidx.compose.ui.window.DialogProperties(
+                                            usePlatformDefaultWidth = false,
+                                        ),
+                                    ) {
+                                        Surface(modifier = Modifier.fillMaxSize()) {
+                                            CameraCapture(
+                                                onCancel = { capturing = false },
+                                                onCapture = { bmp ->
+                                                    val hex = ImageHash.toHex(ImageHash.aHash(bmp))
+                                                    vm.onExpectedCode(hex)
+                                                    capturing = false
+                                                },
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    MissionType.SHAKE -> {
+                        Section("흔들기 횟수") {
+                            Text(
+                                "${s.shakeCount}회",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Slider(
+                                value = s.shakeCount.toFloat(),
+                                onValueChange = { vm.onShakeCount(it.toInt()) },
+                                valueRange = 5f..100f, steps = 18,
+                                colors = SliderDefaults.colors(
+                                    thumbColor = MaterialTheme.colorScheme.primary,
+                                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                                ),
+                            )
+                        }
                     }
                 }
-                MissionType.SHAKE -> {
-                    Text("흔들기 횟수: ${s.shakeCount}")
-                    Slider(
-                        value = s.shakeCount.toFloat(),
-                        onValueChange = { vm.onShakeCount(it.toInt()) },
-                        valueRange = 5f..100f, steps = 18,
+
+                Section("옵션") {
+                    ListRow(
+                        headline = "기본 미션으로 설정",
+                        supporting = "새 알람 만들 때 자동으로 선택돼요",
+                        trailing = {
+                            Switch(
+                                checked = s.isDefault,
+                                onCheckedChange = { vm.toggleDefault() },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                ),
+                            )
+                        },
                     )
                 }
+
+                s.error?.let { ErrorText(it) }
+                Spacer(Modifier.height(FaSpacing.xxl))
             }
-            Spacer(Modifier.height(16.dp))
-            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                Switch(checked = s.isDefault, onCheckedChange = { vm.toggleDefault() })
-                Spacer(Modifier.width(8.dp))
-                Text("기본 미션으로 설정")
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = FaSpacing.lg, vertical = FaSpacing.sm),
+            ) {
+                PrimaryButton(
+                    text = if (s.saving) "저장 중…" else "저장",
+                    onClick = vm::save,
+                    enabled = !s.saving,
+                )
             }
-            s.error?.let { Spacer(Modifier.height(8.dp)); Text(it, color = MaterialTheme.colorScheme.error) }
         }
+    }
+}
+
+@Composable
+private fun ChoicePill(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .clip(MaterialTheme.shapes.medium)
+            .background(
+                if (selected) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.surfaceVariant,
+            )
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.titleMedium,
+            color = if (selected) FA.OnPrimary else MaterialTheme.colorScheme.onBackground,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+        )
     }
 }

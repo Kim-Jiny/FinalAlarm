@@ -45,6 +45,7 @@ class MissionListVm @Inject constructor(private val api: FinalAlarmApi) : ViewMo
 
 @Composable
 fun MissionListScreen(nav: NavController, vm: MissionListVm = hiltViewModel()) {
+    com.jiny.finalalarm.ui.components.OnResume { vm.refresh() }
     val items by vm.state.collectAsState()
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -67,7 +68,10 @@ fun MissionListScreen(nav: NavController, vm: MissionListVm = hiltViewModel()) {
     ) { inner ->
         Column(modifier = Modifier.padding(inner).padding(horizontal = FaSpacing.screen)) {
             vm.error?.let { ErrorText(it) }
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = FaSpacing.xxl),
+            ) {
                 if (items.isEmpty()) {
                     item { EmptyState("미션을 추가해보세요") }
                 } else {

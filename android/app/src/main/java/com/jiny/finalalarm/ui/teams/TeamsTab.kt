@@ -1,6 +1,5 @@
 package com.jiny.finalalarm.ui.teams
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,7 +17,6 @@ import com.jiny.finalalarm.ui.components.EmptyState
 import com.jiny.finalalarm.ui.components.HelloHeader
 import com.jiny.finalalarm.ui.components.ListRow
 import com.jiny.finalalarm.ui.components.SecondaryButton
-import com.jiny.finalalarm.ui.theme.FA
 import com.jiny.finalalarm.ui.theme.FaSpacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,13 +36,21 @@ class TeamsTabVm @Inject constructor(private val api: FinalAlarmApi) : ViewModel
 }
 
 @Composable
-fun TeamsTab(nav: NavController, modifier: Modifier = Modifier, vm: TeamsTabVm = hiltViewModel()) {
+fun TeamsTab(
+    nav: NavController,
+    padding: androidx.compose.foundation.layout.PaddingValues = androidx.compose.foundation.layout.PaddingValues(),
+    vm: TeamsTabVm = hiltViewModel(),
+) {
+    com.jiny.finalalarm.ui.components.OnResume { vm.refresh() }
     val teams by vm.state.collectAsState()
     LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(FA.BgGradient)
-            .padding(horizontal = FaSpacing.lg),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            start = FaSpacing.lg,
+            end = FaSpacing.lg,
+            top = padding.calculateTopPadding(),
+            bottom = padding.calculateBottomPadding() + FaSpacing.xxl,
+        ),
     ) {
         item {
             Spacer(Modifier.height(FaSpacing.xl))

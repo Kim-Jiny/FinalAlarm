@@ -5,7 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -28,7 +27,6 @@ import com.jiny.finalalarm.ui.components.FaTextField
 import com.jiny.finalalarm.ui.components.HelloHeader
 import com.jiny.finalalarm.ui.components.ListRow
 import com.jiny.finalalarm.ui.components.Section
-import com.jiny.finalalarm.ui.theme.FA
 import com.jiny.finalalarm.ui.theme.FaSpacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -68,33 +66,46 @@ class SettingsVm @Inject constructor(
 }
 
 @Composable
-fun SettingsTab(nav: NavController, modifier: Modifier = Modifier, vm: SettingsVm = hiltViewModel()) {
+fun SettingsTab(
+    nav: NavController,
+    padding: PaddingValues = PaddingValues(),
+    vm: SettingsVm = hiltViewModel(),
+) {
     val ctx = LocalContext.current
     var confirmDelete by remember { mutableStateOf(false) }
     var showPwdDialog by remember { mutableStateOf(false) }
+    val pm = remember { ctx.getSystemService(Context.POWER_SERVICE) as PowerManager }
+    var batteryIgnored by remember { mutableStateOf(pm.isIgnoringBatteryOptimizations(ctx.packageName)) }
+    com.jiny.finalalarm.ui.components.OnResume {
+        batteryIgnored = pm.isIgnoringBatteryOptimizations(ctx.packageName)
+    }
 
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
-            .background(FA.BgGradient)
-            .padding(horizontal = FaSpacing.lg)
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(rememberScrollState())
+            .padding(
+                start = FaSpacing.lg,
+                end = FaSpacing.lg,
+                top = padding.calculateTopPadding(),
+                bottom = padding.calculateBottomPadding(),
+            ),
     ) {
         HelloHeader(title = "설정")
 
         Section("알람") {
-            val pm = ctx.getSystemService(Context.POWER_SERVICE) as PowerManager
-            val ignored = pm.isIgnoringBatteryOptimizations(ctx.packageName)
             ListRow(
                 headline = "배터리 최적화",
-                supporting = if (ignored) "제외됨" else "제한됨 — 탭하여 변경",
+                supporting = if (batteryIgnored) "제외됨 — 알람 정확히 울려요" else "제한됨 — 탭하여 변경",
                 onClick = {
-                    ctx.startActivity(
-                        Intent(
-                            Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                            Uri.parse("package:${ctx.packageName}"),
-                        ),
-                    )
+                    val direct = Intent(
+                        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                        Uri.parse("package:${ctx.packageName}"),
+                    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    val fallback = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    val launched = runCatching { ctx.startActivity(direct) }.isSuccess
+                    if (!launched) runCatching { ctx.startActivity(fallback) }
                 },
             )
         }

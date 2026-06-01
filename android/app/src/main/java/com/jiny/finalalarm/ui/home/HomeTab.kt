@@ -1,6 +1,5 @@
 package com.jiny.finalalarm.ui.home
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,7 +20,6 @@ import com.jiny.finalalarm.ui.components.EmptyState
 import com.jiny.finalalarm.ui.components.HelloHeader
 import com.jiny.finalalarm.ui.components.ListRow
 import com.jiny.finalalarm.ui.components.Section
-import com.jiny.finalalarm.ui.theme.FA
 import com.jiny.finalalarm.ui.theme.FaSpacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,7 +58,12 @@ private fun greeting(): String {
 }
 
 @Composable
-fun HomeTab(nav: NavController, modifier: Modifier = Modifier, vm: HomeVm = hiltViewModel()) {
+fun HomeTab(
+    nav: NavController,
+    padding: androidx.compose.foundation.layout.PaddingValues = androidx.compose.foundation.layout.PaddingValues(),
+    vm: HomeVm = hiltViewModel(),
+) {
+    com.jiny.finalalarm.ui.components.OnResume { vm.refresh() }
     val ui by vm.state.collectAsState()
     val msg = when {
         ui.active.isNotEmpty() -> "지금 알람이 울리고 있어요"
@@ -69,10 +72,13 @@ fun HomeTab(nav: NavController, modifier: Modifier = Modifier, vm: HomeVm = hilt
     }
 
     LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(FA.BgGradient)
-            .padding(horizontal = FaSpacing.lg),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            start = FaSpacing.lg,
+            end = FaSpacing.lg,
+            top = padding.calculateTopPadding(),
+            bottom = padding.calculateBottomPadding() + FaSpacing.xxl,
+        ),
     ) {
         item {
             HelloHeader(title = greeting(), subtitle = msg)

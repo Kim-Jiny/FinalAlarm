@@ -42,6 +42,7 @@ class WindowListVm @Inject constructor(private val api: FinalAlarmApi) : ViewMod
 
 @Composable
 fun WindowListScreen(nav: NavController, vm: WindowListVm = hiltViewModel()) {
+    com.jiny.finalalarm.ui.components.OnResume { vm.refresh() }
     val items by vm.state.collectAsState()
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -65,6 +66,7 @@ fun WindowListScreen(nav: NavController, vm: WindowListVm = hiltViewModel()) {
                 .padding(inner)
                 .fillMaxSize()
                 .padding(horizontal = FaSpacing.screen),
+            contentPadding = PaddingValues(bottom = FaSpacing.xxl),
         ) {
             if (items.isEmpty()) {
                 item { EmptyState("시간대를 추가해서 팀원이 깨울 수 있게 해보세요") }

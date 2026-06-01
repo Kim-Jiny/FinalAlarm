@@ -1,7 +1,6 @@
 package com.jiny.finalalarm.ui.alarms
 
 import android.content.Context
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,7 +19,6 @@ import com.jiny.finalalarm.data.api.FinalAlarmApi
 import com.jiny.finalalarm.ui.Routes
 import com.jiny.finalalarm.ui.components.EmptyState
 import com.jiny.finalalarm.ui.components.ListRow
-import com.jiny.finalalarm.ui.theme.FA
 import com.jiny.finalalarm.ui.theme.FaSpacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -61,13 +59,21 @@ class AlarmListVm @Inject constructor(
 }
 
 @Composable
-fun AlarmListTab(nav: NavController, modifier: Modifier = Modifier, vm: AlarmListVm = hiltViewModel()) {
+fun AlarmListTab(
+    nav: NavController,
+    padding: androidx.compose.foundation.layout.PaddingValues = androidx.compose.foundation.layout.PaddingValues(),
+    vm: AlarmListVm = hiltViewModel(),
+) {
+    com.jiny.finalalarm.ui.components.OnResume { vm.refresh() }
     val items by vm.state.collectAsState()
     LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(FA.BgGradient)
-            .padding(horizontal = FaSpacing.lg),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            start = FaSpacing.lg,
+            end = FaSpacing.lg,
+            top = padding.calculateTopPadding(),
+            bottom = padding.calculateBottomPadding() + FaSpacing.xxl,
+        ),
     ) {
         item {
             Spacer(Modifier.height(FaSpacing.xl))

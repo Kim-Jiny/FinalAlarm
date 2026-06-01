@@ -38,6 +38,7 @@ class InboxListVm @Inject constructor(private val api: FinalAlarmApi) : ViewMode
 @Composable
 fun InboxListScreen(nav: NavController, teamId: String, vm: InboxListVm = hiltViewModel()) {
     LaunchedEffect(teamId) { vm.load(teamId) }
+    com.jiny.finalalarm.ui.components.OnResume { vm.load(teamId) }
     val items by vm.state.collectAsState()
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -56,6 +57,7 @@ fun InboxListScreen(nav: NavController, teamId: String, vm: InboxListVm = hiltVi
                 .padding(inner)
                 .fillMaxSize()
                 .padding(horizontal = FaSpacing.screen),
+            contentPadding = PaddingValues(bottom = FaSpacing.xxl),
         ) {
             if (items.isEmpty()) {
                 item { EmptyState("대기 중인 요청이 없어요") }

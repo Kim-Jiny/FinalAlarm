@@ -77,6 +77,7 @@ fun LoginScreen(nav: NavController, vm: AuthVm = hiltViewModel()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.systemBars)
                 .padding(horizontal = FaSpacing.lg),
         ) {
             Spacer(Modifier.weight(0.7f))
@@ -124,6 +125,7 @@ fun SignupScreen(nav: NavController, vm: AuthVm = hiltViewModel()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.systemBars)
                 .padding(horizontal = FaSpacing.lg),
         ) {
             Spacer(Modifier.weight(0.5f))

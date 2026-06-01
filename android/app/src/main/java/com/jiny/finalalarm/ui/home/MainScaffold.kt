@@ -1,6 +1,8 @@
 package com.jiny.finalalarm.ui.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Alarm
@@ -28,20 +30,22 @@ import androidx.navigation.NavController
 import com.jiny.finalalarm.ui.alarms.AlarmListTab
 import com.jiny.finalalarm.ui.settings.SettingsTab
 import com.jiny.finalalarm.ui.teams.TeamsTab
+import com.jiny.finalalarm.ui.theme.FA
 
 @Composable
 fun MainScaffold(nav: NavController) {
     var tab by remember { mutableStateOf(BottomTab.HOME) }
     Scaffold(
+        modifier = Modifier.fillMaxSize().background(FA.BgGradient),
         containerColor = androidx.compose.ui.graphics.Color.Transparent,
         bottomBar = {
-            Column {
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
                 HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outline,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
                     thickness = 0.5.dp,
                 )
                 NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.background,
+                    containerColor = MaterialTheme.colorScheme.surface,
                     tonalElevation = 0.dp,
                 ) {
                     BottomTab.entries.forEach { t ->
@@ -65,10 +69,10 @@ fun MainScaffold(nav: NavController) {
         },
     ) { inner ->
         when (tab) {
-            BottomTab.HOME -> HomeTab(nav, Modifier.padding(inner))
-            BottomTab.ALARMS -> AlarmListTab(nav, Modifier.padding(inner))
-            BottomTab.TEAMS -> TeamsTab(nav, Modifier.padding(inner))
-            BottomTab.SETTINGS -> SettingsTab(nav, Modifier.padding(inner))
+            BottomTab.HOME -> HomeTab(nav, inner)
+            BottomTab.ALARMS -> AlarmListTab(nav, inner)
+            BottomTab.TEAMS -> TeamsTab(nav, inner)
+            BottomTab.SETTINGS -> SettingsTab(nav, inner)
         }
     }
 }

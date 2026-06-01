@@ -1,9 +1,15 @@
 package com.jiny.finalalarm.ui.windows
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -13,6 +19,15 @@ import com.jiny.finalalarm.core.network.userMessage
 import com.jiny.finalalarm.data.api.CreateWindowReq
 import com.jiny.finalalarm.data.api.FinalAlarmApi
 import com.jiny.finalalarm.data.api.TeamSummary
+import com.jiny.finalalarm.ui.components.ErrorText
+import com.jiny.finalalarm.ui.components.FaTextField
+import com.jiny.finalalarm.ui.components.HelloHeader
+import com.jiny.finalalarm.ui.components.ListRow
+import com.jiny.finalalarm.ui.components.PrimaryButton
+import com.jiny.finalalarm.ui.components.Section
+import com.jiny.finalalarm.ui.components.WarmBackground
+import com.jiny.finalalarm.ui.theme.FA
+import com.jiny.finalalarm.ui.theme.FaSpacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -58,7 +73,7 @@ class WindowEditVm @Inject constructor(private val api: FinalAlarmApi) : ViewMod
 
     fun save() = viewModelScope.launch {
         val s = _state.value
-        val team = s.teamId ?: run { _state.value = s.copy(error = "팀 선택 필요"); return@launch }
+        val team = s.teamId ?: run { _state.value = s.copy(error = "팀을 선택해주세요"); return@launch }
         _state.value = s.copy(saving = true, error = null)
         runCatching {
             if (s.editingId == null) {
@@ -83,39 +98,91 @@ fun WindowEditScreen(nav: NavController, windowId: String?, vm: WindowEditVm = h
     val s by vm.state.collectAsState()
     LaunchedEffect(windowId) { if (windowId != null) vm.loadExisting(windowId) }
     LaunchedEffect(s.saved) { if (s.saved) nav.popBackStack() }
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("알람 시간대") }) },
-        bottomBar = {
-            Button(onClick = vm::save, enabled = !s.saving, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                Text(if (s.saving) "저장 중…" else "저장")
+
+    WarmBackground {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.systemBars)
+                .padding(horizontal = FaSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(FaSpacing.md),
+        ) {
+            // TopBar substitute
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = FaSpacing.sm),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = { nav.popBackStack() }) { Text("뒤로") }
+                Spacer(Modifier.weight(1f))
             }
-        },
-    ) { inner ->
-        Column(modifier = Modifier.padding(inner).padding(16.dp)) {
-            Text("팀", style = MaterialTheme.typography.titleSmall)
-            s.teams.forEach { t ->
-                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                    RadioButton(selected = s.teamId == t.id, onClick = { vm.onTeam(t.id) })
-                    Text(t.name)
-                }
-            }
-            Spacer(Modifier.height(16.dp))
-            OutlinedTextField(s.start, vm::onStart, label = { Text("시작 (HH:MM)") }, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.height(8.dp))
-            OutlinedTextField(s.end, vm::onEnd, label = { Text("끝 (HH:MM)") }, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.height(16.dp))
-            Text("요일")
-            Row {
-                listOf("월", "화", "수", "목", "금", "토", "일").forEachIndexed { i, d ->
-                    FilterChip(
-                        selected = (s.days shr i) and 1 == 1,
-                        onClick = { vm.toggleDay(i) },
-                        label = { Text(d) },
-                        modifier = Modifier.padding(end = 4.dp),
+            HelloHeader(
+                title = if (s.editingId == null) "시간대 만들기" else "시간대 수정",
+                subtitle = "이 시간에 팀원이 깨워줄 수 있어요",
+            )
+
+            Section("팀") {
+                s.teams.forEach { t ->
+                    ListRow(
+                        headline = t.name,
+                        trailing = {
+                            RadioButton(
+                                selected = s.teamId == t.id,
+                                onClick = { vm.onTeam(t.id) },
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = MaterialTheme.colorScheme.primary,
+                                ),
+                            )
+                        },
+                        onClick = { vm.onTeam(t.id) },
                     )
                 }
             }
-            s.error?.let { Spacer(Modifier.height(8.dp)); Text(it, color = MaterialTheme.colorScheme.error) }
+
+            Section("시간") {
+                FaTextField(s.start, vm::onStart, "시작 (HH:MM)")
+                Spacer(Modifier.height(FaSpacing.sm))
+                FaTextField(s.end, vm::onEnd, "끝 (HH:MM)")
+            }
+
+            Section("요일") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(FaSpacing.xs),
+                ) {
+                    listOf("월", "화", "수", "목", "금", "토", "일").forEachIndexed { i, d ->
+                        val selected = (s.days shr i) and 1 == 1
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 44.dp)
+                                .clip(MaterialTheme.shapes.medium)
+                                .background(
+                                    if (selected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.surfaceVariant,
+                                )
+                                .clickable { vm.toggleDay(i) },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                d,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = if (selected) FA.OnPrimary else MaterialTheme.colorScheme.onBackground,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    }
+                }
+            }
+
+            s.error?.let { ErrorText(it) }
+            Spacer(Modifier.weight(1f))
+            PrimaryButton(
+                text = if (s.saving) "저장 중…" else "저장",
+                onClick = vm::save,
+                enabled = !s.saving,
+            )
+            Spacer(Modifier.height(FaSpacing.md))
         }
     }
 }

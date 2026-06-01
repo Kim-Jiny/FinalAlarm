@@ -3,8 +3,8 @@ package com.jiny.finalalarm.ui.pushalarm
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,6 +13,14 @@ import com.jiny.finalalarm.core.network.userMessage
 import com.jiny.finalalarm.data.api.FinalAlarmApi
 import com.jiny.finalalarm.data.api.PushAlarmReq
 import com.jiny.finalalarm.data.api.TeamMemberDto
+import com.jiny.finalalarm.ui.components.ErrorText
+import com.jiny.finalalarm.ui.components.FaTextField
+import com.jiny.finalalarm.ui.components.HelloHeader
+import com.jiny.finalalarm.ui.components.ListRow
+import com.jiny.finalalarm.ui.components.PrimaryButton
+import com.jiny.finalalarm.ui.components.Section
+import com.jiny.finalalarm.ui.components.WarmBackground
+import com.jiny.finalalarm.ui.theme.FaSpacing
 import com.jiny.finalalarm.ui.util.assistedViewModel
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -69,27 +77,69 @@ fun PushAlarmScreen(nav: NavController, teamId: String) {
     val vm = assistedViewModel(teamId) { host.factory.create(teamId) }
     val s by vm.state.collectAsState()
     LaunchedEffect(s.sent) { if (s.sent) nav.popBackStack() }
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("팀원 깨우기") }) },
-        bottomBar = {
-            Button(
-                onClick = vm::send,
-                enabled = !s.sending && s.selectedUserId != null,
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-            ) { Text(if (s.sending) "전송 중…" else "알람 발사") }
-        },
-    ) { inner ->
-        Column(modifier = Modifier.padding(inner).padding(16.dp)) {
-            OutlinedTextField(s.label, vm::onLabel, label = { Text("라벨") }, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.height(16.dp))
-            Text("팀원 선택", style = MaterialTheme.typography.titleSmall)
-            s.members.forEach { m ->
-                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                    RadioButton(selected = s.selectedUserId == m.user.id, onClick = { vm.selectUser(m.user.id) })
-                    Column { Text(m.user.displayName); Text(m.role.name, style = MaterialTheme.typography.bodySmall) }
+
+    WarmBackground {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.systemBars)
+                .padding(horizontal = FaSpacing.lg),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = FaSpacing.sm),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = { nav.popBackStack() }) { Text("뒤로") }
+                Spacer(Modifier.weight(1f))
+            }
+            HelloHeader(
+                title = "친구를 깨워요",
+                subtitle = "이 시간대 안에서만 알람이 울려요",
+            )
+
+            Section("메시지") {
+                FaTextField(s.label, vm::onLabel, "예: 일어나!")
+            }
+
+            Section("누구를 깨울까요?") {
+                if (s.members.isEmpty()) {
+                    Text(
+                        "팀원이 없어요",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    s.members.forEach { m ->
+                        ListRow(
+                            headline = m.user.displayName,
+                            supporting = when (m.role.name) {
+                                "OWNER" -> "오너"
+                                "ADMIN" -> "관리자"
+                                else -> "멤버"
+                            },
+                            trailing = {
+                                RadioButton(
+                                    selected = s.selectedUserId == m.user.id,
+                                    onClick = { vm.selectUser(m.user.id) },
+                                    colors = RadioButtonDefaults.colors(
+                                        selectedColor = MaterialTheme.colorScheme.primary,
+                                    ),
+                                )
+                            },
+                            onClick = { vm.selectUser(m.user.id) },
+                        )
+                    }
                 }
             }
-            s.error?.let { Spacer(Modifier.height(8.dp)); Text(it, color = MaterialTheme.colorScheme.error) }
+
+            s.error?.let { ErrorText(it) }
+            Spacer(Modifier.weight(1f))
+            PrimaryButton(
+                text = if (s.sending) "발사 중…" else "알람 발사",
+                onClick = vm::send,
+                enabled = !s.sending && s.selectedUserId != null,
+            )
+            Spacer(Modifier.height(FaSpacing.md))
         }
     }
 }

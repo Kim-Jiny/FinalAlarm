@@ -5,7 +5,6 @@ package app.finalalarm.ui.missions
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -128,9 +127,14 @@ fun CameraCapture(
                         executor,
                         object : ImageCapture.OnImageCapturedCallback() {
                             override fun onCaptureSuccess(image: ImageProxy) {
-                                val bmp = image.toBitmap()
+                                val rotation = image.imageInfo.rotationDegrees
+                                val raw = image.toBitmap()
                                 image.close()
-                                onCapture(bmp)
+                                val final = if (rotation == 0) raw else {
+                                    val m = Matrix().apply { postRotate(rotation.toFloat()) }
+                                    Bitmap.createBitmap(raw, 0, 0, raw.width, raw.height, m, true)
+                                }
+                                onCapture(final)
                                 capturing = false
                             }
                             override fun onError(exception: ImageCaptureException) {
@@ -146,12 +150,3 @@ fun CameraCapture(
     }
 }
 
-private fun ImageProxy.toBitmap(): Bitmap {
-    val buffer = planes[0].buffer
-    val bytes = ByteArray(buffer.remaining()).also { buffer.get(it) }
-    val raw = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-    val rotation = imageInfo.rotationDegrees
-    if (rotation == 0) return raw
-    val matrix = Matrix().apply { postRotate(rotation.toFloat()) }
-    return Bitmap.createBitmap(raw, 0, 0, raw.width, raw.height, matrix, true)
-}

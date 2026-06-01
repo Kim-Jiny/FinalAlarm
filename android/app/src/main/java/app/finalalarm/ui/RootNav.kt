@@ -86,6 +86,15 @@ fun RootNav(initialInviteCode: String? = null) {
         }
     }
 
+    // 로그아웃·계정삭제 등으로 토큰이 사라지면 LOGIN으로 강제 이동
+    androidx.compose.runtime.LaunchedEffect(loggedIn) {
+        if (loggedIn == false) {
+            nav.navigate(Routes.LOGIN) {
+                popUpTo(nav.graph.id) { inclusive = true }
+            }
+        }
+    }
+
     NavHost(navController = nav, startDestination = start) {
         composable(Routes.LOGIN) { LoginScreen(nav) }
         composable(Routes.SIGNUP) { SignupScreen(nav) }

@@ -25,6 +25,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -65,14 +66,19 @@ fun TeamCreateScreen(nav: NavController, vm: TeamCreateVm = hiltViewModel()) {
 // ---- 팀 상세 ----
 class TeamDetailVm @AssistedInject constructor(
     private val api: FinalAlarmApi,
+    private val tokenStore: app.finalalarm.core.auth.TokenStore,
     @Assisted private val teamId: String,
 ) : ViewModel() {
     private val _state = MutableStateFlow<TeamDetail?>(null)
     val state = _state.asStateFlow()
     var error by mutableStateOf<String?>(null)
     var leftTeam by mutableStateOf(false)
+    var myUserId by mutableStateOf<String?>(null)
 
-    init { refresh() }
+    init {
+        refresh()
+        viewModelScope.launch { myUserId = tokenStore.userIdFlow.first() }
+    }
     fun refresh() = viewModelScope.launch {
         _state.value = runCatching { api.getTeam(teamId) }.getOrNull()
     }
@@ -115,8 +121,11 @@ fun TeamDetailScreen(nav: NavController, teamId: String) {
 
     LaunchedEffect(vm.leftTeam) { if (vm.leftTeam) nav.popBackStack() }
 
-    // 본인 role 결정 (멤버 목록에서 자기 찾기는 어려우므로 OWNER/ADMIN 체크는 임시로 첫 멤버 가정 skip)
-    val myRoleInTeam = team?.members?.firstOrNull()?.role  // 향후: 로그인한 user id로 정확히 찾기
+    // 본인 role 결정 — TokenStore에서 받아온 user id로 멤버 목록에서 찾기
+    val myRoleInTeam = remember(team, vm.myUserId) {
+        val uid = vm.myUserId ?: return@remember null
+        team?.members?.find { it.user.id == uid }?.role
+    }
 
     Scaffold(topBar = { TopAppBar(title = { Text(team?.name ?: "팀") }) }) { inner ->
         Column(modifier = Modifier.padding(inner).padding(16.dp)) {

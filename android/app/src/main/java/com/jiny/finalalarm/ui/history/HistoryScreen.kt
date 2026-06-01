@@ -64,7 +64,8 @@ fun HistoryScreen(nav: NavController, vm: HistoryVm = hiltViewModel()) {
                 item { EmptyState("기록이 없습니다") }
             } else {
                 items(events) { e ->
-                    val when_ = e.triggeredAt.substringBefore('.').replace('T', ' ')
+                    val triggered = e.triggeredAt.substringBefore('.').replace('T', ' ')
+                    val dismissed = e.dismissedAt?.substringBefore('.')?.replace('T', ' ')
                     val state = when (e.state) {
                         AlarmEventState.DISMISSED -> "해제"
                         AlarmEventState.EXPIRED -> "만료"
@@ -74,9 +75,33 @@ fun HistoryScreen(nav: NavController, vm: HistoryVm = hiltViewModel()) {
                         AlarmEventState.RINGING -> "울리는 중"
                     }
                     val source = if (e.senderUserId != null) "팀원이 깨움" else "본인 알람"
+                    val deviceNote = buildString {
+                        e.volumePctAtTrigger?.let { append("울릴 때 볼륨 ${it}%") }
+                        if (e.dndAtTrigger == true) {
+                            if (isNotEmpty()) append(" · ")
+                            append("방해금지 ON")
+                        }
+                        e.volumePctAtDismiss?.let {
+                            if (isNotEmpty()) append("  ·  ")
+                            append("끌 때 볼륨 ${it}%")
+                        }
+                    }.takeIf { it.isNotBlank() }
+                    val supporting = buildString {
+                        append(state)
+                        append(" · ")
+                        append(source)
+                        if (dismissed != null) {
+                            append("\n해제 ")
+                            append(dismissed)
+                        }
+                        if (deviceNote != null) {
+                            append("\n")
+                            append(deviceNote)
+                        }
+                    }
                     ListRow(
-                        headline = when_,
-                        supporting = "$state · $source",
+                        headline = triggered,
+                        supporting = supporting,
                     )
                 }
             }

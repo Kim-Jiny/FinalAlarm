@@ -275,10 +275,18 @@ data class AlarmEventDto(
     val triggeredAt: String,
     val nextRingAt: String? = null,
     val dismissedAt: String? = null,
+    val volumePctAtTrigger: Int? = null,
+    val dndAtTrigger: Boolean? = null,
+    val volumePctAtDismiss: Int? = null,
+    val dndAtDismiss: Boolean? = null,
 )
 
 @Serializable
-data class DismissReq(val missionProof: Map<String, kotlinx.serialization.json.JsonElement>)
+data class DismissReq(
+    val missionProof: Map<String, kotlinx.serialization.json.JsonElement>,
+    val volumePct: Int? = null,
+    val dnd: Boolean? = null,
+)
 
 @Serializable
 data class CreateEventReq(
@@ -286,6 +294,10 @@ data class CreateEventReq(
     val triggeredAt: String? = null,
     val initialState: String? = null,    // "RINGING" | "DISMISSED" (reconcile)
     val dismissedAt: String? = null,
+    val volumePctAtTrigger: Int? = null,
+    val dndAtTrigger: Boolean? = null,
+    val volumePctAtDismiss: Int? = null,
+    val dndAtDismiss: Boolean? = null,
 )
 
 // ---------- Unlock requests ----------

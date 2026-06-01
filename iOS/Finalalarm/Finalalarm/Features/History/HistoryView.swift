@@ -23,12 +23,9 @@ struct HistoryView: View {
                         EmptyState(text: "기록이 없습니다")
                     } else {
                         ForEach(vm.events) { e in
-                            let when_ = e.triggeredAt.split(separator: ".").first
-                                .map(String.init)?.replacingOccurrences(of: "T", with: " ") ?? e.triggeredAt
-                            let source = e.senderUserId != nil ? "팀원이 깨움" : "본인 알람"
                             ListRow(
-                                headline: when_,
-                                supporting: "\(e.state.label) · \(source)"
+                                headline: formatDate(e.triggeredAt),
+                                supporting: buildSupporting(e)
                             )
                         }
                     }
@@ -41,5 +38,32 @@ struct HistoryView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task { await vm.refresh() }
         .refreshable { await vm.refresh() }
+    }
+
+    private func formatDate(_ s: String) -> String {
+        let trimmed = s.split(separator: ".").first.map(String.init) ?? s
+        return trimmed.replacingOccurrences(of: "T", with: " ")
+    }
+
+    private func buildSupporting(_ e: AlarmEventDto) -> String {
+        let source = e.senderUserId != nil ? "팀원이 깨움" : "본인 알람"
+        var lines: [String] = ["\(e.state.label) · \(source)"]
+        if let d = e.dismissedAt {
+            lines.append("해제 \(formatDate(d))")
+        }
+        var deviceParts: [String] = []
+        if let v = e.volumePctAtTrigger {
+            deviceParts.append("울릴 때 볼륨 \(v)%")
+        }
+        if e.dndAtTrigger == true {
+            deviceParts.append("방해금지 ON")
+        }
+        if let v = e.volumePctAtDismiss {
+            deviceParts.append("끌 때 볼륨 \(v)%")
+        }
+        if !deviceParts.isEmpty {
+            lines.append(deviceParts.joined(separator: " · "))
+        }
+        return lines.joined(separator: "\n")
     }
 }

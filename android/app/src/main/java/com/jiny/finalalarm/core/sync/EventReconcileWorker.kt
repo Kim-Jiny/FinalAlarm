@@ -44,6 +44,10 @@ class EventReconcileWorker @AssistedInject constructor(
                         triggeredAt = p.triggeredAt,
                         initialState = if (p.dismissed) "DISMISSED" else "RINGING",
                         dismissedAt = p.dismissedAt,
+                        volumePctAtTrigger = p.volumePctAtTrigger,
+                        dndAtTrigger = p.dndAtTrigger,
+                        volumePctAtDismiss = p.volumePctAtDismiss,
+                        dndAtDismiss = p.dndAtDismiss,
                     ),
                 )
             }

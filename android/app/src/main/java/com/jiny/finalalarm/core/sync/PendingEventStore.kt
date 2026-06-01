@@ -30,6 +30,10 @@ class PendingEventStore @Inject constructor(@ApplicationContext private val ctx:
         val triggeredAt: String,           // ISO
         val dismissed: Boolean = false,
         val dismissedAt: String? = null,
+        val volumePctAtTrigger: Int? = null,
+        val dndAtTrigger: Boolean? = null,
+        val volumePctAtDismiss: Int? = null,
+        val dndAtDismiss: Boolean? = null,
     )
 
     suspend fun list(): List<Pending> {
@@ -42,8 +46,20 @@ class PendingEventStore @Inject constructor(@ApplicationContext private val ctx:
         write(cur + p)
     }
 
-    suspend fun markDismissed(localId: String, dismissedAt: String) {
-        val cur = list().map { if (it.localId == localId) it.copy(dismissed = true, dismissedAt = dismissedAt) else it }
+    suspend fun markDismissed(
+        localId: String,
+        dismissedAt: String,
+        volumePct: Int? = null,
+        dnd: Boolean? = null,
+    ) {
+        val cur = list().map {
+            if (it.localId == localId) it.copy(
+                dismissed = true,
+                dismissedAt = dismissedAt,
+                volumePctAtDismiss = volumePct,
+                dndAtDismiss = dnd,
+            ) else it
+        }
         write(cur)
     }
 

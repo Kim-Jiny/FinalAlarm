@@ -24,7 +24,15 @@ export class EventsService {
   async createFromDefinition(
     userId: string,
     definitionId: string,
-    opts: { triggeredAt?: string; initialState?: 'RINGING' | 'DISMISSED'; dismissedAt?: string } = {},
+    opts: {
+      triggeredAt?: string;
+      initialState?: 'RINGING' | 'DISMISSED';
+      dismissedAt?: string;
+      volumePctAtTrigger?: number;
+      dndAtTrigger?: boolean;
+      volumePctAtDismiss?: number;
+      dndAtDismiss?: boolean;
+    } = {},
   ) {
     const def = await this.prisma.alarmDefinition.findUnique({ where: { id: definitionId } });
     if (!def) throw new AppError('NOT_FOUND', 'Alarm not found');
@@ -48,6 +56,10 @@ export class EventsService {
             ? new Date(opts.dismissedAt)
             : new Date()
           : null,
+        volumePctAtTrigger: opts.volumePctAtTrigger ?? null,
+        dndAtTrigger: opts.dndAtTrigger ?? null,
+        volumePctAtDismiss: dismissed ? opts.volumePctAtDismiss ?? null : null,
+        dndAtDismiss: dismissed ? opts.dndAtDismiss ?? null : null,
       },
     });
   }
@@ -124,7 +136,12 @@ export class EventsService {
     });
   }
 
-  async dismiss(userId: string, id: string, missionProof: { type: MissionType; [k: string]: unknown }) {
+  async dismiss(
+    userId: string,
+    id: string,
+    missionProof: { type: MissionType; [k: string]: unknown },
+    deviceState: { volumePct?: number; dnd?: boolean } = {},
+  ) {
     const event = await this.prisma.alarmEvent.findUnique({
       where: { id },
       include: { definition: true, mission: true },
@@ -155,6 +172,8 @@ export class EventsService {
         state: AlarmEventState.DISMISSED,
         dismissedAt: new Date(),
         nextRingAt: null,
+        volumePctAtDismiss: deviceState.volumePct ?? null,
+        dndAtDismiss: deviceState.dnd ?? null,
       },
     });
   }

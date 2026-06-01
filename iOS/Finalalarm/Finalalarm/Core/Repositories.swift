@@ -160,8 +160,8 @@ final class EventsRepository {
         try await api.post("alarm-events", req)
     }
 
-    func update(_ id: String, state: AlarmEventState) async throws -> AlarmEventDto {
-        try await api.patch("alarm-events/\(id)", UpdateAlarmEventRequest(state: state))
+    func dismiss(_ id: String, _ req: DismissRequest) async throws -> AlarmEventDto {
+        try await api.post("alarm-events/\(id)/dismiss", req)
     }
 
     func inbox(_ teamId: String, status: UnlockRequestStatus = .PENDING) async throws -> [UnlockRequestDto] {

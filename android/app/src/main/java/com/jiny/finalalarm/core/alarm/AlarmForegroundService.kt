@@ -74,11 +74,19 @@ class AlarmForegroundService : Service() {
             ?: return payload.copy(eventId = "local-${UUID.randomUUID()}")
 
         val triggeredAt = OffsetDateTime.now().toString()
+        val ds = com.jiny.finalalarm.core.device.DeviceState.probe(applicationContext)
         val delays = listOf(0L, 1_000L, 2_000L, 4_000L, 8_000L) // 총 ~15s 동안 5회
         for ((i, d) in delays.withIndex()) {
             if (d > 0) delay(d)
             val result = runCatching {
-                api.createEvent(CreateEventReq(definitionId = defId, triggeredAt = triggeredAt))
+                api.createEvent(
+                    CreateEventReq(
+                        definitionId = defId,
+                        triggeredAt = triggeredAt,
+                        volumePctAtTrigger = ds.volumePct,
+                        dndAtTrigger = ds.dnd,
+                    ),
+                )
             }
             if (result.isSuccess) {
                 return payload.copy(eventId = result.getOrNull()!!.id)
@@ -94,6 +102,8 @@ class AlarmForegroundService : Service() {
                     localId = localId,
                     definitionId = defId,
                     triggeredAt = triggeredAt,
+                    volumePctAtTrigger = ds.volumePct,
+                    dndAtTrigger = ds.dnd,
                 ),
             )
             EventReconcileWorker.enqueue(applicationContext)

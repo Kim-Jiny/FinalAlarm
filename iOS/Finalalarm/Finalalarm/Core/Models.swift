@@ -239,17 +239,29 @@ struct AlarmEventDto: Codable, Identifiable {
     let userId: String
     let senderUserId: String?
     let triggeredAt: String
+    let dismissedAt: String?
     let state: AlarmEventState
+    let volumePctAtTrigger: Int?
+    let dndAtTrigger: Bool?
+    let volumePctAtDismiss: Int?
+    let dndAtDismiss: Bool?
 }
 
 struct CreateAlarmEventRequest: Codable {
-    let alarmId: String?
-    let triggeredAt: String
-    let state: AlarmEventState
+    let definitionId: String
+    let triggeredAt: String?
+    let initialState: String?
+    let dismissedAt: String?
+    let volumePctAtTrigger: Int?
+    let dndAtTrigger: Bool?
+    let volumePctAtDismiss: Int?
+    let dndAtDismiss: Bool?
 }
 
-struct UpdateAlarmEventRequest: Codable {
-    let state: AlarmEventState
+struct DismissRequest: Codable {
+    let missionProof: [String: AnyCodable]
+    let volumePct: Int?
+    let dnd: Bool?
 }
 
 // MARK: - Unlock requests

@@ -8,9 +8,13 @@ struct RingingView: View {
     let onDismiss: () -> Void
 
     @State private var mission: MissionDto? = nil
+    @State private var eventId: String? = nil
     @State private var showingMission = false
     @State private var missionPassed = false
     @State private var loadingMission = true
+
+    private let eventsRepo = EventsRepository.shared
+    private let missionsRepo = MissionsRepository.shared
 
     var body: some View {
         ZStack {
@@ -51,7 +55,10 @@ struct RingingView: View {
         }
         .onAppear {
             AlarmAudioPlayer.shared.start()
-            Task { await loadMission() }
+            Task {
+                await loadMission()
+                await reportTrigger()
+            }
         }
         .onDisappear { AlarmAudioPlayer.shared.stop() }
         .fullScreenCover(isPresented: $showingMission) {
@@ -61,6 +68,7 @@ struct RingingView: View {
                     onSuccess: {
                         missionPassed = true
                         showingMission = false
+                        Task { await reportDismiss(passedMission: mission) }
                     },
                     onCancel: { showingMission = false }
                 )
@@ -73,8 +81,40 @@ struct RingingView: View {
             loadingMission = false
             return
         }
-        mission = try? await MissionsRepository.shared.get(mid)
+        mission = try? await missionsRepo.get(mid)
         loadingMission = false
+    }
+
+    /// 알람 울리는 시점 디바이스 상태를 서버에 보고 → eventId 받음.
+    private func reportTrigger() async {
+        guard let alarm else { return }
+        let ds = DeviceState.probe()
+        let req = CreateAlarmEventRequest(
+            definitionId: alarm.id,
+            triggeredAt: ISO8601DateFormatter().string(from: Date()),
+            initialState: "RINGING",
+            dismissedAt: nil,
+            volumePctAtTrigger: ds.volumePct,
+            dndAtTrigger: ds.dnd,
+            volumePctAtDismiss: nil,
+            dndAtDismiss: nil
+        )
+        let event = try? await eventsRepo.create(req)
+        eventId = event?.id
+    }
+
+    /// 미션 통과 후 dismiss API 호출 (개인 알람만; 팀 승인은 별도 흐름).
+    private func reportDismiss(passedMission m: MissionDto) async {
+        guard !isTeamApproval, let id = eventId else { return }
+        let ds = DeviceState.probe()
+        var proof: [String: AnyCodable] = ["type": .string(m.type.rawValue)]
+        switch m.type {
+        case .MATH: proof["answers"] = .array([])
+        case .PHOTO: proof["imageUrl"] = .string("")
+        case .SHAKE: proof["shakeCount"] = .int(0)
+        }
+        let req = DismissRequest(missionProof: proof, volumePct: ds.volumePct, dnd: ds.dnd)
+        _ = try? await eventsRepo.dismiss(id, req)
     }
 
     private func stop() {

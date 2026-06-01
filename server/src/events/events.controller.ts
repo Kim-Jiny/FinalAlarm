@@ -29,6 +29,10 @@ export class EventsController {
       triggeredAt: dto.triggeredAt,
       initialState: dto.initialState,
       dismissedAt: dto.dismissedAt,
+      volumePctAtTrigger: dto.volumePctAtTrigger,
+      dndAtTrigger: dto.dndAtTrigger,
+      volumePctAtDismiss: dto.volumePctAtDismiss,
+      dndAtDismiss: dto.dndAtDismiss,
     });
   }
 
@@ -58,7 +62,10 @@ export class EventsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: DismissDto,
   ) {
-    return this.events.dismiss(userId, id, dto.missionProof);
+    return this.events.dismiss(userId, id, dto.missionProof, {
+      volumePct: dto.volumePct,
+      dnd: dto.dnd,
+    });
   }
 
   @Post(':id/unlock-request')

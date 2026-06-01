@@ -13,6 +13,7 @@ import androidx.lifecycle.viewModelScope
 import com.jiny.finalalarm.ui.util.assistedViewModel
 import android.content.Context
 import com.jiny.finalalarm.core.alarm.AlarmRingPayload
+import com.jiny.finalalarm.core.device.DeviceState
 import com.jiny.finalalarm.core.network.userMessage
 import com.jiny.finalalarm.core.sync.EventReconcileWorker
 import com.jiny.finalalarm.core.sync.PendingEventStore
@@ -104,10 +105,16 @@ class RingingVm @AssistedInject constructor(
     }
 
     fun submitDismiss(type: MissionType, proof: Map<String, JsonElement>) = viewModelScope.launch {
+        val ds = DeviceState.probe(appCtx)
         if (isLocal) {
             // 오프라인 — pending queue에 dismiss 기록 후 종료 (네트워크 복구 시 reconcile)
             runCatching {
-                pendingStore.markDismissed(eventId, OffsetDateTime.now().toString())
+                pendingStore.markDismissed(
+                    eventId,
+                    OffsetDateTime.now().toString(),
+                    volumePct = ds.volumePct,
+                    dnd = ds.dnd,
+                )
                 EventReconcileWorker.enqueue(appCtx)
             }
             _state.value = _state.value.copy(phase = RingingPhase.DONE)
@@ -115,7 +122,7 @@ class RingingVm @AssistedInject constructor(
         }
         val payload = proof.toMutableMap()
         payload["type"] = JsonPrimitive(type.name)
-        runCatching { api.dismiss(eventId, DismissReq(payload)) }
+        runCatching { api.dismiss(eventId, DismissReq(payload, volumePct = ds.volumePct, dnd = ds.dnd)) }
             .onSuccess { _state.value = _state.value.copy(phase = RingingPhase.DONE) }
             .onFailure { _state.value = _state.value.copy(error = it.userMessage()) }
     }

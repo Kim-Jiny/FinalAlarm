@@ -264,6 +264,11 @@ model AlarmEvent {
   nextRingAt    DateTime?       @map("next_ring_at") @db.Timestamptz
   triggeredAt   DateTime        @map("triggered_at") @db.Timestamptz
   dismissedAt   DateTime?       @map("dismissed_at") @db.Timestamptz
+  // 팀원에게 "이 사람 알람 무음일 수도 있어요" 표시용 스냅샷
+  volumePctAtTrigger Int?       @map("volume_pct_at_trigger")
+  dndAtTrigger       Boolean?   @map("dnd_at_trigger")
+  volumePctAtDismiss Int?       @map("volume_pct_at_dismiss")
+  dndAtDismiss       Boolean?   @map("dnd_at_dismiss")
   createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz
 
   definition AlarmDefinition? @relation(fields: [definitionId], references: [id], onDelete: SetNull)

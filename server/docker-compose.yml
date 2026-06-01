@@ -1,0 +1,35 @@
+# FinalAlarm 단독 docker-compose.
+# coachDesk와 같은 호스트에서 별도로 실행.
+# coachDesk의 PostgreSQL 컨테이너에 접근하려면 외부 네트워크 공유 필요.
+#
+# 사전 작업 (호스트에서 1회):
+#   1) coachDesk 쪽 docker-compose가 만든 네트워크 이름 확인:
+#      docker network ls
+#      예: "coachdesk_default"
+#   2) 아래 networks 섹션의 external name을 그 이름으로 수정
+#   3) .env의 DATABASE_URL 호스트 부분에 coachDesk postgres 서비스 이름 사용
+#      예: DATABASE_URL="postgresql://user:pass@postgres:5432/coachdesk"
+#
+# 실행:
+#   docker compose up -d --build
+
+services:
+  finalalarm-api:
+    build: .
+    container_name: finalalarm-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    networks:
+      - coachdesk_net          # coachDesk와 동일 네트워크 (DB 접근)
+      - default                # finalalarm 내부
+    # FCM 서비스 계정 JSON을 호스트에서 마운트 (보안)
+    volumes:
+      - ./secrets/fcm-service-account.json:/run/secrets/fcm-service-account.json:ro
+
+networks:
+  coachdesk_net:
+    external: true
+    name: coachdesk_default    # ← 실제 네트워크 이름으로 수정 (docker network ls로 확인)

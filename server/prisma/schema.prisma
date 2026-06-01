@@ -1,0 +1,340 @@
+// FinalAlarm Prisma schema
+// 테이블은 alarm_* prefix로 격리 (coachDesk와 같은 DB 공유)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ──────────────────────────────────────────────
+// Users (FinalAlarm 전용. coachDesk users와는 별개 테이블)
+// 추후 coachDesk와 통합하려면 외래 키를 그쪽 테이블로 돌리는 마이그레이션 필요
+// ──────────────────────────────────────────────
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  displayName  String   @map("display_name")
+  avatarUrl    String?  @map("avatar_url")
+  timezone     String   @default("Asia/Seoul")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  memberships     TeamMember[]
+  invitesCreated  TeamInvite[]   @relation("InviteCreator")
+  missions        UserMission[]
+  alarms          AlarmDefinition[]
+  windows         AlarmWindow[]
+  pushTokens      PushToken[]
+  refreshTokens   RefreshToken[]
+  eventsAsTarget  AlarmEvent[]   @relation("EventTarget")
+  eventsAsSender  AlarmEvent[]   @relation("EventSender")
+  requestsAsReqr  UnlockRequest[] @relation("UnlockRequester")
+  requestsApproved UnlockRequest[] @relation("UnlockApprover")
+  teamsCreated    Team[]         @relation("TeamCreator")
+
+  @@map("alarm_users")
+}
+
+// 리프레시 토큰 저장 (로그아웃·강제만료 가능하도록)
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("alarm_refresh_tokens")
+}
+
+// ──────────────────────────────────────────────
+// Teams
+// ──────────────────────────────────────────────
+model Team {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  createdBy String   @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  creator User         @relation("TeamCreator", fields: [createdBy], references: [id])
+  members TeamMember[]
+  invites TeamInvite[]
+  windows AlarmWindow[]
+  alarms  AlarmDefinition[]
+  events  AlarmEvent[]
+  unlockRequests UnlockRequest[]
+
+  @@map("alarm_teams")
+}
+
+enum TeamRole {
+  OWNER
+  ADMIN
+  MEMBER
+
+  @@map("alarm_team_role")
+}
+
+model TeamMember {
+  teamId   String   @map("team_id") @db.Uuid
+  userId   String   @map("user_id") @db.Uuid
+  role     TeamRole @default(MEMBER)
+  joinedAt DateTime @default(now()) @map("joined_at") @db.Timestamptz
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, userId])
+  @@index([userId])
+  @@map("alarm_team_members")
+}
+
+model TeamInvite {
+  id        String    @id @default(uuid()) @db.Uuid
+  teamId    String    @map("team_id") @db.Uuid
+  code      String    @unique
+  createdBy String    @map("created_by") @db.Uuid
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  maxUses   Int?      @map("max_uses")
+  useCount  Int       @default(0) @map("use_count")
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  team    Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  creator User @relation("InviteCreator", fields: [createdBy], references: [id])
+
+  @@index([teamId])
+  @@map("alarm_team_invites")
+}
+
+// ──────────────────────────────────────────────
+// User missions (끄기 미션 프로필)
+// ──────────────────────────────────────────────
+enum MissionType {
+  MATH
+  PHOTO
+  SHAKE
+
+  @@map("alarm_mission_type")
+}
+
+model UserMission {
+  id        String      @id @default(uuid()) @db.Uuid
+  userId    String      @map("user_id") @db.Uuid
+  type      MissionType
+  name      String
+  config    Json
+  isDefault Boolean     @default(false) @map("is_default")
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+
+  user   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  alarms AlarmDefinition[]
+  events AlarmEvent[]
+
+  @@index([userId])
+  @@map("alarm_user_missions")
+}
+
+// ──────────────────────────────────────────────
+// Alarm definitions
+// ──────────────────────────────────────────────
+enum AlarmKind {
+  TEAM_APPROVAL
+  PERSONAL
+
+  @@map("alarm_kind")
+}
+
+enum ScheduleType {
+  ONE_SHOT
+  RECURRING
+
+  @@map("alarm_schedule_type")
+}
+
+enum VibrationPattern {
+  SHORT
+  MEDIUM
+  LONG
+  PULSE
+  HEARTBEAT
+
+  @@map("alarm_vibration_pattern")
+}
+
+model AlarmDefinition {
+  id      String    @id @default(uuid()) @db.Uuid
+  ownerId String    @map("owner_id") @db.Uuid
+  teamId  String?   @map("team_id") @db.Uuid
+  kind    AlarmKind
+  label   String
+  timezone String
+
+  scheduleType ScheduleType @map("schedule_type")
+  oneShotAt    DateTime?    @map("one_shot_at") @db.Timestamptz
+  timeOfDay    String?      @map("time_of_day") // "HH:mm"
+  daysOfWeek   Int?         @map("days_of_week")
+
+  soundUri           String           @map("sound_uri")
+  volume             Int              @default(80)
+  volumeRampSeconds  Int              @default(0) @map("volume_ramp_seconds")
+  vibrationEnabled   Boolean          @default(true) @map("vibration_enabled")
+  vibrationPattern   VibrationPattern @default(PULSE) @map("vibration_pattern")
+
+  snoozeEnabled      Boolean @default(true) @map("snooze_enabled")
+  snoozeMinutes      Int     @default(5) @map("snooze_minutes")
+  snoozeMaxCount     Int     @default(3) @map("snooze_max_count")
+
+  missionId String @map("mission_id") @db.Uuid
+  active    Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  owner   User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  team    Team?        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  mission UserMission  @relation(fields: [missionId], references: [id])
+  events  AlarmEvent[]
+
+  @@index([ownerId, active])
+  @@index([teamId, active])
+  @@map("alarm_definitions")
+}
+
+// ──────────────────────────────────────────────
+// Alarm windows
+// ──────────────────────────────────────────────
+model AlarmWindow {
+  id         String  @id @default(uuid()) @db.Uuid
+  userId     String  @map("user_id") @db.Uuid
+  teamId     String  @map("team_id") @db.Uuid
+  startTime  String  @map("start_time")  // "HH:mm"
+  endTime    String  @map("end_time")    // "HH:mm"
+  daysOfWeek Int     @map("days_of_week")
+  timezone   String
+  active     Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team   Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  events AlarmEvent[]
+
+  @@index([userId, active])
+  @@index([teamId, active])
+  @@map("alarm_windows")
+}
+
+// ──────────────────────────────────────────────
+// Alarm events (실제 울린 인스턴스)
+// ──────────────────────────────────────────────
+enum AlarmEventState {
+  RINGING
+  SNOOZED
+  UNLOCK_REQUESTED
+  UNLOCK_APPROVED
+  DISMISSED
+  EXPIRED
+
+  @@map("alarm_event_state")
+}
+
+model AlarmEvent {
+  id            String          @id @default(uuid()) @db.Uuid
+  definitionId  String?         @map("definition_id") @db.Uuid
+  windowId      String?         @map("window_id") @db.Uuid
+  targetUserId  String          @map("target_user_id") @db.Uuid
+  senderUserId  String?         @map("sender_user_id") @db.Uuid
+  teamId        String?         @map("team_id") @db.Uuid
+  missionId     String          @map("mission_id") @db.Uuid
+  state         AlarmEventState @default(RINGING)
+  snoozeCount   Int             @default(0) @map("snooze_count")
+  lastSnoozedAt DateTime?       @map("last_snoozed_at") @db.Timestamptz
+  nextRingAt    DateTime?       @map("next_ring_at") @db.Timestamptz
+  triggeredAt   DateTime        @map("triggered_at") @db.Timestamptz
+  dismissedAt   DateTime?       @map("dismissed_at") @db.Timestamptz
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz
+
+  definition AlarmDefinition? @relation(fields: [definitionId], references: [id], onDelete: SetNull)
+  window     AlarmWindow?     @relation(fields: [windowId], references: [id], onDelete: SetNull)
+  target     User             @relation("EventTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  sender     User?            @relation("EventSender", fields: [senderUserId], references: [id], onDelete: SetNull)
+  team       Team?            @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  mission    UserMission      @relation(fields: [missionId], references: [id])
+  unlockRequests UnlockRequest[]
+
+  @@index([targetUserId, state])
+  @@index([state, nextRingAt])
+  @@index([triggeredAt])
+  @@map("alarm_events")
+}
+
+// ──────────────────────────────────────────────
+// Unlock requests
+// ──────────────────────────────────────────────
+enum UnlockRequestStatus {
+  PENDING
+  APPROVED
+  EXPIRED
+  CANCELED
+
+  @@map("alarm_unlock_request_status")
+}
+
+model UnlockRequest {
+  id          String              @id @default(uuid()) @db.Uuid
+  eventId     String              @map("event_id") @db.Uuid
+  requesterId String              @map("requester_id") @db.Uuid
+  teamId      String              @map("team_id") @db.Uuid
+  status      UnlockRequestStatus @default(PENDING)
+  approvedBy  String?             @map("approved_by") @db.Uuid
+  approvedAt  DateTime?           @map("approved_at") @db.Timestamptz
+  expiresAt   DateTime            @map("expires_at") @db.Timestamptz
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz
+
+  event     AlarmEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  requester User       @relation("UnlockRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  team      Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  approver  User?      @relation("UnlockApprover", fields: [approvedBy], references: [id], onDelete: SetNull)
+
+  @@index([teamId, status])
+  @@index([expiresAt, status])
+  @@map("alarm_unlock_requests")
+}
+
+// ──────────────────────────────────────────────
+// Push tokens
+// ──────────────────────────────────────────────
+enum DevicePlatform {
+  ANDROID
+  IOS
+
+  @@map("alarm_device_platform")
+}
+
+model PushToken {
+  id         String         @id @default(uuid()) @db.Uuid
+  userId     String         @map("user_id") @db.Uuid
+  platform   DevicePlatform
+  token      String         @unique
+  deviceId   String         @map("device_id")
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  lastSeenAt DateTime       @default(now()) @map("last_seen_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+  @@index([userId])
+  @@map("alarm_push_tokens")
+}

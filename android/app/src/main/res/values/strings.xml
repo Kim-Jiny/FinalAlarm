@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FinalAlarm</string>
+
+    <!-- Notification channels -->
+    <string name="channel_alarm_fg">알람 재생 중</string>
+    <string name="channel_unlock_request">잠금해제 요청</string>
+    <string name="channel_unlock_approved">잠금해제 승인</string>
+    <string name="channel_system">시스템</string>
+</resources>

@@ -1,0 +1,16 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Claude Code workspace state
+.claude/
+
+# Local env / logs
+*.log
+.env
+.env.local

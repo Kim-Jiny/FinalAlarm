@@ -14,3 +14,13 @@ Thumbs.db
 *.log
 .env
 .env.local
+
+# Kotlin compiler session cache
+.kotlin/
+
+# Xcode user state / build outputs
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+

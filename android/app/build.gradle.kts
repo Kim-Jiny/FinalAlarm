@@ -9,11 +9,11 @@ plugins {
 }
 
 android {
-    namespace = "app.finalalarm"
+    namespace = "com.jiny.finalalarm"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "app.finalalarm"
+        applicationId = "com.jiny.finalalarm"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

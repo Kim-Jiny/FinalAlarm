@@ -122,16 +122,28 @@ fun ShakeMissionRunner(targetCount: Int, onComplete: (count: Int) -> Unit) {
 }
 
 // ---- 사진 미션 (QR/Barcode) ----
-// MVP에서는 placeholder. 실제 구현은 CameraX + MLKit BarcodeScanning.
+// CameraX 미리보기 + MLKit BarcodeScanner. expectedCode와 매칭되면 미션 완료.
 @Composable
-fun PhotoMissionRunner(mode: String, onComplete: (imageUrlOrCode: String) -> Unit) {
+fun PhotoMissionRunner(
+    mode: String,
+    expectedCode: String?,
+    onComplete: (imageUrlOrCode: String) -> Unit,
+) {
+    when (mode) {
+        "QR", "BARCODE" -> BarcodeMissionRunner(mode, expectedCode, onComplete)
+        else -> ReferenceImageMissionRunner(onComplete)
+    }
+}
+
+@Composable
+private fun ReferenceImageMissionRunner(onComplete: (String) -> Unit) {
     Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
-        Text("사진 미션 ($mode)", style = MaterialTheme.typography.headlineMedium)
+        Text("사진 인증 (사물)", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(16.dp))
-        Text("카메라 통합은 추후 구현 — 지금은 더미 통과 버튼")
+        Text("이미지 매칭은 추후 구현 — 지금은 더미 통과")
         Spacer(Modifier.height(16.dp))
         Button(
-            onClick = { onComplete("dummy://mission-photo") },
+            onClick = { onComplete("dummy://mission-reference-image") },
             modifier = Modifier.fillMaxWidth(),
         ) { Text("통과 (임시)") }
     }

@@ -12,6 +12,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import app.finalalarm.core.network.userMessage
 import app.finalalarm.data.api.CreateInviteReq
 import app.finalalarm.data.api.CreateTeamReq
 import app.finalalarm.data.api.FinalAlarmApi
@@ -39,7 +40,7 @@ class TeamCreateVm @Inject constructor(private val api: FinalAlarmApi) : ViewMod
         saving = true; error = null
         runCatching { api.createTeam(CreateTeamReq(name)) }
             .onSuccess { savedId = it.id; saving = false }
-            .onFailure { error = it.message; saving = false }
+            .onFailure { error = it.userMessage(); saving = false }
     }
 }
 
@@ -87,14 +88,20 @@ fun TeamDetailScreen(nav: NavController, teamId: String) {
     val team by vm.state.collectAsState()
     Scaffold(topBar = { TopAppBar(title = { Text(team?.name ?: "팀") }) }) { inner ->
         Column(modifier = Modifier.padding(inner).padding(16.dp)) {
-            Row {
-                OutlinedButton(onClick = { nav.navigate(Routes.TEAM_INVITE.replace("{id}", teamId)) }) {
-                    Text("초대")
+            Column {
+                Row {
+                    OutlinedButton(onClick = { nav.navigate(Routes.TEAM_INVITE.replace("{id}", teamId)) }) {
+                        Text("초대")
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    OutlinedButton(onClick = { nav.navigate(Routes.PUSH_ALARM.replace("{teamId}", teamId)) }) {
+                        Text("팀원 깨우기")
+                    }
                 }
-                Spacer(Modifier.width(8.dp))
-                OutlinedButton(onClick = { nav.navigate(Routes.PUSH_ALARM.replace("{teamId}", teamId)) }) {
-                    Text("팀원 깨우기")
-                }
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = { nav.navigate(Routes.INBOX_LIST.replace("{teamId}", teamId)) },
+                ) { Text("잠금해제 요청 인박스") }
             }
             Spacer(Modifier.height(16.dp))
             Text("멤버", style = MaterialTheme.typography.titleMedium)
@@ -126,7 +133,7 @@ class TeamInviteVm @AssistedInject constructor(
     fun create() = viewModelScope.launch {
         loading = true; error = null
         runCatching { api.createInvite(teamId, CreateInviteReq(expiresInDays = 7)) }
-            .onFailure { error = it.message }
+            .onFailure { error = it.userMessage() }
         loading = false
         refresh()
     }
@@ -181,7 +188,7 @@ class JoinTeamVm @Inject constructor(private val api: FinalAlarmApi) : ViewModel
         loading = true; error = null
         runCatching { api.redeemInvite(code.trim().uppercase()) }
             .onSuccess { joinedTeamId = it.teamId; loading = false }
-            .onFailure { error = it.message; loading = false }
+            .onFailure { error = it.userMessage(); loading = false }
     }
 }
 

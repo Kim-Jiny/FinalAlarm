@@ -20,20 +20,34 @@ export class EventsService {
   ) {}
 
   // 클라 로컬 알람 발사 보고 — definition 기준으로 event 생성
-  async createFromDefinition(userId: string, definitionId: string, triggeredAt?: string) {
+  // reconcile: initialState='DISMISSED'면 끈 후 도착한 이벤트로 처리
+  async createFromDefinition(
+    userId: string,
+    definitionId: string,
+    opts: { triggeredAt?: string; initialState?: 'RINGING' | 'DISMISSED'; dismissedAt?: string } = {},
+  ) {
     const def = await this.prisma.alarmDefinition.findUnique({ where: { id: definitionId } });
     if (!def) throw new AppError('NOT_FOUND', 'Alarm not found');
     if (def.ownerId !== userId) throw new AppError('FORBIDDEN', 'Only owner can report');
-    if (!def.active) throw new AppError('EVENT_INVALID_STATE', 'Alarm is inactive');
+    // Inactive 알람도 reconcile 케이스에서는 허용 (사용자가 알람 끈 후 정의를 비활성했을 수 있음)
+    if (!def.active && opts.initialState !== 'DISMISSED') {
+      throw new AppError('EVENT_INVALID_STATE', 'Alarm is inactive');
+    }
 
+    const dismissed = opts.initialState === 'DISMISSED';
     return this.prisma.alarmEvent.create({
       data: {
         definitionId: def.id,
         targetUserId: def.ownerId,
         teamId: def.teamId,
         missionId: def.missionId,
-        state: AlarmEventState.RINGING,
-        triggeredAt: triggeredAt ? new Date(triggeredAt) : new Date(),
+        state: dismissed ? AlarmEventState.DISMISSED : AlarmEventState.RINGING,
+        triggeredAt: opts.triggeredAt ? new Date(opts.triggeredAt) : new Date(),
+        dismissedAt: dismissed
+          ? opts.dismissedAt
+            ? new Date(opts.dismissedAt)
+            : new Date()
+          : null,
       },
     });
   }

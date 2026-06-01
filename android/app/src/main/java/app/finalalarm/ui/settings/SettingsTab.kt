@@ -16,6 +16,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import app.finalalarm.data.AuthRepository
+import app.finalalarm.ui.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -51,6 +52,18 @@ fun SettingsTab(nav: NavController, modifier: Modifier = Modifier, vm: SettingsV
             },
             modifier = Modifier.fillMaxWidth(),
         ) { Text("배터리 설정 열기") }
+
+        Spacer(Modifier.height(16.dp))
+        OutlinedButton(
+            onClick = { nav.navigate(Routes.MISSION_LIST) },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("내 미션 관리") }
+
+        Spacer(Modifier.height(8.dp))
+        OutlinedButton(
+            onClick = { nav.navigate(Routes.WINDOW_LIST) },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("알람 시간대 관리") }
 
         Spacer(Modifier.height(16.dp))
         OutlinedButton(

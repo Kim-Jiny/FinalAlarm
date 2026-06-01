@@ -1,5 +1,6 @@
 package app.finalalarm.ui.alarms
 
+import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -13,6 +14,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import app.finalalarm.core.network.userMessage
+import app.finalalarm.core.work.AlarmRescheduleWorker
 import app.finalalarm.data.api.AlarmKind
 import app.finalalarm.data.api.CreateAlarmReq
 import app.finalalarm.data.api.FinalAlarmApi
@@ -21,6 +24,7 @@ import app.finalalarm.data.api.ScheduleType
 import app.finalalarm.data.api.TeamSummary
 import app.finalalarm.data.api.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -46,7 +50,10 @@ data class AlarmEditUi(
 )
 
 @HiltViewModel
-class AlarmEditVm @Inject constructor(private val api: FinalAlarmApi) : ViewModel() {
+class AlarmEditVm @Inject constructor(
+    private val api: FinalAlarmApi,
+    @ApplicationContext private val ctx: Context,
+) : ViewModel() {
     private val _state = MutableStateFlow(AlarmEditUi())
     val state = _state.asStateFlow()
 
@@ -105,8 +112,11 @@ class AlarmEditVm @Inject constructor(private val api: FinalAlarmApi) : ViewMode
                     missionId = missionId,
                 ),
             )
-        }.onSuccess { _state.value = _state.value.copy(saving = false, saved = true) }
-            .onFailure { _state.value = _state.value.copy(saving = false, error = it.message) }
+        }.onSuccess {
+            AlarmRescheduleWorker.enqueue(ctx)
+            _state.value = _state.value.copy(saving = false, saved = true)
+        }
+            .onFailure { _state.value = _state.value.copy(saving = false, error = it.userMessage()) }
     }
 }
 

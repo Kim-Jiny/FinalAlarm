@@ -3,8 +3,6 @@ package app.finalalarm.core.alarm
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import app.finalalarm.core.work.AlarmRescheduleWorker
 
 /**
@@ -16,11 +14,7 @@ class BootReceiver : BroadcastReceiver() {
             Intent.ACTION_BOOT_COMPLETED,
             Intent.ACTION_LOCKED_BOOT_COMPLETED,
             Intent.ACTION_MY_PACKAGE_REPLACED,
-            -> {
-                WorkManager.getInstance(context).enqueue(
-                    OneTimeWorkRequestBuilder<AlarmRescheduleWorker>().build(),
-                )
-            }
+            -> AlarmRescheduleWorker.enqueue(context)
         }
     }
 }

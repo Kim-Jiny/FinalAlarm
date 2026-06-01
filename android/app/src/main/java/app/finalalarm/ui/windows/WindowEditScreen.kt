@@ -9,6 +9,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import app.finalalarm.core.network.userMessage
 import app.finalalarm.data.api.CreateWindowReq
 import app.finalalarm.data.api.FinalAlarmApi
 import app.finalalarm.data.api.TeamSummary
@@ -49,7 +50,7 @@ class WindowEditVm @Inject constructor(private val api: FinalAlarmApi) : ViewMod
         runCatching {
             api.createWindow(CreateWindowReq(team, s.start, s.end, s.days, TimeZone.getDefault().id))
         }.onSuccess { _state.value = _state.value.copy(saving = false, saved = true) }
-            .onFailure { _state.value = _state.value.copy(saving = false, error = it.message) }
+            .onFailure { _state.value = _state.value.copy(saving = false, error = it.userMessage()) }
     }
 }
 

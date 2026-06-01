@@ -278,7 +278,12 @@ data class AlarmEventDto(
 data class DismissReq(val missionProof: Map<String, kotlinx.serialization.json.JsonElement>)
 
 @Serializable
-data class CreateEventReq(val definitionId: String, val triggeredAt: String? = null)
+data class CreateEventReq(
+    val definitionId: String,
+    val triggeredAt: String? = null,
+    val initialState: String? = null,    // "RINGING" | "DISMISSED" (reconcile)
+    val dismissedAt: String? = null,
+)
 
 // ---------- Unlock requests ----------
 @Serializable

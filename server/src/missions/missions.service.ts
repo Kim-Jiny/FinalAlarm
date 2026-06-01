@@ -24,9 +24,17 @@ export class MissionsService {
         break;
       }
       case MissionType.PHOTO: {
-        const { mode } = config as { mode?: string };
+        const { mode, expectedCode } = config as { mode?: string; expectedCode?: string };
         if (!['REFERENCE_IMAGE', 'QR', 'BARCODE'].includes(mode ?? '')) {
           throw new AppError('VALIDATION_ERROR', 'mode must be REFERENCE_IMAGE|QR|BARCODE');
+        }
+        if (expectedCode !== undefined) {
+          if (typeof expectedCode !== 'string' || expectedCode.length === 0 || expectedCode.length > 4096) {
+            throw new AppError('VALIDATION_ERROR', 'expectedCode must be 1-4096 char string');
+          }
+          if (mode === 'REFERENCE_IMAGE') {
+            throw new AppError('VALIDATION_ERROR', 'expectedCode not allowed for REFERENCE_IMAGE mode');
+          }
         }
         break;
       }

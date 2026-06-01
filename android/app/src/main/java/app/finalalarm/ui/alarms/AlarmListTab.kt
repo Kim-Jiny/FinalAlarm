@@ -1,5 +1,6 @@
 package app.finalalarm.ui.alarms
 
+import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,17 +14,22 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import app.finalalarm.core.work.AlarmRescheduleWorker
 import app.finalalarm.data.api.AlarmDto
 import app.finalalarm.data.api.FinalAlarmApi
 import app.finalalarm.ui.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class AlarmListVm @Inject constructor(private val api: FinalAlarmApi) : ViewModel() {
+class AlarmListVm @Inject constructor(
+    private val api: FinalAlarmApi,
+    @ApplicationContext private val ctx: Context,
+) : ViewModel() {
     private val _state = MutableStateFlow<List<AlarmDto>>(emptyList())
     val state = _state.asStateFlow()
 
@@ -39,7 +45,13 @@ class AlarmListVm @Inject constructor(private val api: FinalAlarmApi) : ViewMode
                 id,
                 mapOf("active" to kotlinx.serialization.json.JsonPrimitive(active)),
             )
-        }
+        }.onSuccess { AlarmRescheduleWorker.enqueue(ctx) }
+        refresh()
+    }
+
+    fun delete(id: String) = viewModelScope.launch {
+        runCatching { api.deleteAlarm(id) }
+            .onSuccess { AlarmRescheduleWorker.enqueue(ctx) }
         refresh()
     }
 }

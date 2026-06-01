@@ -12,6 +12,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import app.finalalarm.core.network.userMessage
 import app.finalalarm.data.api.FinalAlarmApi
 import app.finalalarm.data.api.UnlockRequestDto
 import dagger.assisted.Assisted
@@ -42,7 +43,7 @@ class UnlockRequestDetailVm @AssistedInject constructor(
         approving = true; error = null
         runCatching { api.approveUnlock(id) }
             .onSuccess { done = true; approving = false }
-            .onFailure { error = it.message; approving = false }
+            .onFailure { error = it.userMessage(); approving = false }
     }
 }
 

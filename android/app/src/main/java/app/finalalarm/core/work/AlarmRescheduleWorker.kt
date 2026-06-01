@@ -3,9 +3,13 @@ package app.finalalarm.core.work
 import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import app.finalalarm.core.alarm.AlarmRingPayload
 import app.finalalarm.core.alarm.AlarmScheduler
+import app.finalalarm.core.alarm.ScheduledAlarmStore
 import app.finalalarm.data.api.FinalAlarmApi
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -17,10 +21,17 @@ class AlarmRescheduleWorker @AssistedInject constructor(
     @Assisted params: WorkerParameters,
     private val api: FinalAlarmApi,
     private val scheduler: AlarmScheduler,
+    private val scheduledStore: ScheduledAlarmStore,
 ) : CoroutineWorker(ctx, params) {
 
     override suspend fun doWork(): Result = runCatching {
         val alarms = api.listAlarms(active = true)
+        val activeIds = alarms.map { it.id }.toSet()
+
+        // 더 이상 active 아닌 알람들 cancel
+        val previouslyScheduled = scheduledStore.list()
+        (previouslyScheduled - activeIds).forEach { scheduler.cancel(it) }
+
         // 미션 캐시 (알람별 fetch 중복 방지)
         val missionsById = runCatching { api.listMissions() }.getOrDefault(emptyList())
             .associateBy { it.id }
@@ -54,9 +65,20 @@ class AlarmRescheduleWorker @AssistedInject constructor(
             )
             scheduler.schedule(a, payload)
         }
+        scheduledStore.save(activeIds)
         Result.success()
     }.getOrElse {
         Timber.e(it, "Reschedule failed")
         Result.retry()
+    }
+
+    companion object {
+        private const val UNIQUE_NAME = "alarm-reschedule"
+
+        fun enqueue(ctx: Context) {
+            val req = OneTimeWorkRequestBuilder<AlarmRescheduleWorker>().build()
+            WorkManager.getInstance(ctx)
+                .enqueueUniqueWork(UNIQUE_NAME, ExistingWorkPolicy.REPLACE, req)
+        }
     }
 }

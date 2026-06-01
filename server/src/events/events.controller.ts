@@ -25,7 +25,11 @@ export class EventsController {
   // 클라 로컬 알람이 발사됐을 때 호출
   @Post()
   create(@CurrentUserId() userId: string, @Body() dto: CreateEventDto) {
-    return this.events.createFromDefinition(userId, dto.definitionId, dto.triggeredAt);
+    return this.events.createFromDefinition(userId, dto.definitionId, {
+      triggeredAt: dto.triggeredAt,
+      initialState: dto.initialState,
+      dismissedAt: dto.dismissedAt,
+    });
   }
 
   @Get('history')

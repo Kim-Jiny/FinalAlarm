@@ -9,6 +9,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import app.finalalarm.core.network.userMessage
 import app.finalalarm.data.api.FinalAlarmApi
 import app.finalalarm.data.api.PushAlarmReq
 import app.finalalarm.data.api.TeamMemberDto
@@ -51,7 +52,7 @@ class PushAlarmVm @AssistedInject constructor(
         _state.value = s.copy(sending = true, error = null)
         runCatching { api.pushAlarm(PushAlarmReq(target, teamId, s.label)) }
             .onSuccess { _state.value = _state.value.copy(sending = false, sent = true) }
-            .onFailure { _state.value = _state.value.copy(sending = false, error = it.message) }
+            .onFailure { _state.value = _state.value.copy(sending = false, error = it.userMessage()) }
     }
 }
 

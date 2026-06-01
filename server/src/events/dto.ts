@@ -22,4 +22,13 @@ export class CreateEventDto {
   @IsDateString()
   @IsOptional()
   triggeredAt?: string;
+
+  // 오프라인 reconcile용: 클라가 끈 후에야 서버에 도달하는 경우 'DISMISSED'로 생성
+  @IsEnum(['RINGING', 'DISMISSED'] as any, { each: false })
+  @IsOptional()
+  initialState?: 'RINGING' | 'DISMISSED';
+
+  @IsDateString()
+  @IsOptional()
+  dismissedAt?: string;
 }

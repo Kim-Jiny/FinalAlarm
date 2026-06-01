@@ -9,6 +9,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import app.finalalarm.core.network.userMessage
 import app.finalalarm.data.api.CreateMissionReq
 import app.finalalarm.data.api.FinalAlarmApi
 import app.finalalarm.data.api.MissionType
@@ -26,6 +27,7 @@ data class MissionEditUi(
     val difficulty: String = "medium",
     val questionCount: Int = 3,
     val photoMode: String = "QR",
+    val expectedCode: String = "",
     val shakeCount: Int = 30,
     val isDefault: Boolean = false,
     val saving: Boolean = false,
@@ -43,6 +45,7 @@ class MissionEditVm @Inject constructor(private val api: FinalAlarmApi) : ViewMo
     fun onDifficulty(v: String) { _state.value = _state.value.copy(difficulty = v) }
     fun onQuestionCount(v: Int) { _state.value = _state.value.copy(questionCount = v) }
     fun onPhotoMode(v: String) { _state.value = _state.value.copy(photoMode = v) }
+    fun onExpectedCode(v: String) { _state.value = _state.value.copy(expectedCode = v) }
     fun onShakeCount(v: Int) { _state.value = _state.value.copy(shakeCount = v) }
     fun toggleDefault() { _state.value = _state.value.copy(isDefault = !_state.value.isDefault) }
 
@@ -53,14 +56,19 @@ class MissionEditVm @Inject constructor(private val api: FinalAlarmApi) : ViewMo
                 "difficulty" to JsonPrimitive(s.difficulty),
                 "questionCount" to JsonPrimitive(s.questionCount),
             )
-            MissionType.PHOTO -> mapOf("mode" to JsonPrimitive(s.photoMode))
+            MissionType.PHOTO -> buildMap {
+                put("mode", JsonPrimitive(s.photoMode))
+                if (s.expectedCode.isNotBlank() && (s.photoMode == "QR" || s.photoMode == "BARCODE")) {
+                    put("expectedCode", JsonPrimitive(s.expectedCode.trim()))
+                }
+            }
             MissionType.SHAKE -> mapOf("shakeCount" to JsonPrimitive(s.shakeCount))
         }
         _state.value = s.copy(saving = true, error = null)
         runCatching {
             api.createMission(CreateMissionReq(s.type, s.name.ifBlank { "${s.type}" }, config, s.isDefault))
         }.onSuccess { _state.value = _state.value.copy(saving = false, saved = true) }
-            .onFailure { _state.value = _state.value.copy(saving = false, error = it.message) }
+            .onFailure { _state.value = _state.value.copy(saving = false, error = it.userMessage()) }
     }
 }
 
@@ -124,6 +132,15 @@ fun MissionEditScreen(nav: NavController, missionId: String?, vm: MissionEditVm 
                                 modifier = Modifier.padding(end = 4.dp),
                             )
                         }
+                    }
+                    if (s.photoMode == "QR" || s.photoMode == "BARCODE") {
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = s.expectedCode,
+                            onValueChange = vm::onExpectedCode,
+                            label = { Text("기대 코드 (비우면 어떤 코드든 통과)") },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
                 }
                 MissionType.SHAKE -> {

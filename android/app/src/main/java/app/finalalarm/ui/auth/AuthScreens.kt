@@ -11,6 +11,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import app.finalalarm.core.network.userMessage
 import app.finalalarm.data.AuthRepository
 import app.finalalarm.ui.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -43,7 +44,7 @@ class AuthVm @Inject constructor(private val repo: AuthRepository) : ViewModel()
         _state.value = s.copy(loading = true, error = null)
         runCatching { repo.signup(s.email, s.password, s.displayName, TimeZone.getDefault().id) }
             .onSuccess { _state.value = _state.value.copy(loading = false, success = true) }
-            .onFailure { _state.value = _state.value.copy(loading = false, error = it.message) }
+            .onFailure { _state.value = _state.value.copy(loading = false, error = it.userMessage()) }
     }
 
     fun login() = viewModelScope.launch {
@@ -51,7 +52,7 @@ class AuthVm @Inject constructor(private val repo: AuthRepository) : ViewModel()
         _state.value = s.copy(loading = true, error = null)
         runCatching { repo.login(s.email, s.password) }
             .onSuccess { _state.value = _state.value.copy(loading = false, success = true) }
-            .onFailure { _state.value = _state.value.copy(loading = false, error = it.message) }
+            .onFailure { _state.value = _state.value.copy(loading = false, error = it.userMessage()) }
     }
 }
 

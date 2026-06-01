@@ -18,11 +18,14 @@ import app.finalalarm.ui.home.MainScaffold
 import app.finalalarm.ui.teams.JoinTeamScreen
 import app.finalalarm.ui.alarms.AlarmEditScreen
 import app.finalalarm.ui.missions.MissionEditScreen
+import app.finalalarm.ui.missions.MissionListScreen
 import app.finalalarm.ui.teams.TeamCreateScreen
 import app.finalalarm.ui.teams.TeamDetailScreen
 import app.finalalarm.ui.teams.TeamInviteScreen
 import app.finalalarm.ui.windows.WindowEditScreen
+import app.finalalarm.ui.windows.WindowListScreen
 import app.finalalarm.ui.pushalarm.PushAlarmScreen
+import app.finalalarm.ui.inbox.InboxListScreen
 import app.finalalarm.ui.inbox.UnlockRequestDetailScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,15 +39,18 @@ object Routes {
     const val MAIN = "main"
     const val ALARM_EDIT = "alarm/edit"
     const val ALARM_EDIT_WITH_ID = "alarm/edit/{id}"
+    const val MISSION_LIST = "mission/list"
     const val MISSION_EDIT = "mission/edit"
     const val MISSION_EDIT_WITH_ID = "mission/edit/{id}"
     const val TEAM_CREATE = "team/create"
     const val TEAM_DETAIL = "team/{id}"
     const val TEAM_INVITE = "team/{id}/invite"
     const val JOIN_TEAM = "team/join"
+    const val WINDOW_LIST = "window/list"
     const val WINDOW_EDIT = "window/edit"
     const val WINDOW_EDIT_WITH_ID = "window/edit/{id}"
     const val PUSH_ALARM = "push-alarm/{teamId}"
+    const val INBOX_LIST = "inbox/{teamId}"
     const val UNLOCK_DETAIL = "inbox/request/{id}"
 }
 
@@ -81,6 +87,7 @@ fun RootNav() {
             arguments = listOf(navArgument("id") { type = NavType.StringType }),
         ) { entry -> AlarmEditScreen(nav, entry.arguments?.getString("id")) }
 
+        composable(Routes.MISSION_LIST) { MissionListScreen(nav) }
         composable(Routes.MISSION_EDIT) { MissionEditScreen(nav, missionId = null) }
         composable(
             Routes.MISSION_EDIT_WITH_ID,
@@ -100,6 +107,7 @@ fun RootNav() {
 
         composable(Routes.JOIN_TEAM) { JoinTeamScreen(nav) }
 
+        composable(Routes.WINDOW_LIST) { WindowListScreen(nav) }
         composable(Routes.WINDOW_EDIT) { WindowEditScreen(nav, windowId = null) }
         composable(
             Routes.WINDOW_EDIT_WITH_ID,
@@ -110,6 +118,11 @@ fun RootNav() {
             Routes.PUSH_ALARM,
             arguments = listOf(navArgument("teamId") { type = NavType.StringType }),
         ) { entry -> PushAlarmScreen(nav, entry.arguments!!.getString("teamId")!!) }
+
+        composable(
+            Routes.INBOX_LIST,
+            arguments = listOf(navArgument("teamId") { type = NavType.StringType }),
+        ) { entry -> InboxListScreen(nav, entry.arguments!!.getString("teamId")!!) }
 
         composable(
             Routes.UNLOCK_DETAIL,

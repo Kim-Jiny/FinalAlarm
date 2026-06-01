@@ -10,17 +10,20 @@ import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import app.finalalarm.CHANNEL_ALARM_FG
 import app.finalalarm.R
+import app.finalalarm.core.sync.EventReconcileWorker
+import app.finalalarm.core.sync.PendingEventStore
 import app.finalalarm.data.api.CreateEventReq
 import app.finalalarm.data.api.FinalAlarmApi
 import app.finalalarm.ui.ringing.RingingActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
 
@@ -28,6 +31,7 @@ import javax.inject.Inject
 class AlarmForegroundService : Service() {
 
     @Inject lateinit var api: FinalAlarmApi
+    @Inject lateinit var pendingStore: PendingEventStore
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var player: AlarmAudioPlayer? = null
@@ -66,15 +70,35 @@ class AlarmForegroundService : Service() {
     }
 
     private suspend fun ensureServerEventId(payload: AlarmRingPayload): AlarmRingPayload {
-        val defId = payload.definitionId ?: return payload.copy(eventId = "local-${UUID.randomUUID()}")
-        return try {
-            val event = api.createEvent(CreateEventReq(definitionId = defId))
-            payload.copy(eventId = event.id)
-        } catch (e: Exception) {
-            // 오프라인/서버 다운: 로컬 UUID로 진행. PERSONAL이면 클라 단에서만 dismiss 가능.
-            Timber.w(e, "createEvent failed; using local UUID")
-            payload.copy(eventId = "local-${UUID.randomUUID()}")
+        val defId = payload.definitionId
+            ?: return payload.copy(eventId = "local-${UUID.randomUUID()}")
+
+        val triggeredAt = OffsetDateTime.now().toString()
+        val delays = listOf(0L, 1_000L, 2_000L, 4_000L, 8_000L) // 총 ~15s 동안 5회
+        for ((i, d) in delays.withIndex()) {
+            if (d > 0) delay(d)
+            val result = runCatching {
+                api.createEvent(CreateEventReq(definitionId = defId, triggeredAt = triggeredAt))
+            }
+            if (result.isSuccess) {
+                return payload.copy(eventId = result.getOrNull()!!.id)
+            }
+            Timber.w(result.exceptionOrNull(), "createEvent attempt ${i + 1} failed")
         }
+
+        // 끝내 실패 → 로컬 UUID + pending queue에 적재 (네트워크 복구 시 reconcile)
+        val localId = "local-${UUID.randomUUID()}"
+        runCatching {
+            pendingStore.add(
+                PendingEventStore.Pending(
+                    localId = localId,
+                    definitionId = defId,
+                    triggeredAt = triggeredAt,
+                ),
+            )
+            EventReconcileWorker.enqueue(applicationContext)
+        }
+        return payload.copy(eventId = localId)
     }
 
     private fun launchRingingActivity(payload: AlarmRingPayload) {
@@ -118,20 +142,25 @@ class AlarmForegroundService : Service() {
     }
 
     private fun stopAndFinish() {
-        player?.stop()
+        player?.release()
         player = null
-        runCatching { wakeLock?.takeIf { it.isHeld }?.release() }
-        wakeLock = null
+        releaseWakeLock()
         val nm = getSystemService(NotificationManager::class.java)
         nm?.cancel(NOTIF_ID)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
+    private fun releaseWakeLock() {
+        runCatching { wakeLock?.takeIf { it.isHeld }?.release() }
+        wakeLock = null
+    }
+
     override fun onDestroy() {
         Timber.d("AlarmForegroundService destroying")
-        player?.stop()
-        runCatching { wakeLock?.takeIf { it.isHeld }?.release() }
+        player?.release()
+        player = null
+        releaseWakeLock()
         scope.cancel()
         super.onDestroy()
     }

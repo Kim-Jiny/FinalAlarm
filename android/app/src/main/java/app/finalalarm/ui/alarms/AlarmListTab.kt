@@ -1,6 +1,7 @@
 package app.finalalarm.ui.alarms
 
 import android.content.Context
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -70,7 +71,11 @@ fun AlarmListTab(nav: NavController, modifier: Modifier = Modifier, vm: AlarmLis
         LazyColumn(modifier = Modifier.padding(inner).fillMaxSize()) {
             items(items) { a ->
                 ListItem(
-                    modifier = Modifier.padding(horizontal = 8.dp),
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                        .clickable {
+                            nav.navigate(Routes.ALARM_EDIT_WITH_ID.replace("{id}", a.id))
+                        },
                     headlineContent = { Text(a.label) },
                     supportingContent = {
                         Text("${a.timeOfDay ?: a.oneShotAt ?: "?"} • ${a.kind}")

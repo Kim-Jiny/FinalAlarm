@@ -45,7 +45,9 @@ object Routes {
     const val TEAM_CREATE = "team/create"
     const val TEAM_DETAIL = "team/{id}"
     const val TEAM_INVITE = "team/{id}/invite"
-    const val JOIN_TEAM = "team/join"
+    const val JOIN_TEAM = "team/join?code={code}"
+    fun joinTeamRoute(code: String? = null): String =
+        if (code != null) "team/join?code=$code" else "team/join?code="
     const val WINDOW_LIST = "window/list"
     const val WINDOW_EDIT = "window/edit"
     const val WINDOW_EDIT_WITH_ID = "window/edit/{id}"
@@ -64,7 +66,7 @@ class SessionVm @Inject constructor(authRepo: AuthRepository) : ViewModel() {
 }
 
 @Composable
-fun RootNav() {
+fun RootNav(initialInviteCode: String? = null) {
     val nav = rememberNavController()
     val sessionVm: SessionVm = hiltViewModel()
     val loggedIn by sessionVm.loggedIn.collectAsState()
@@ -73,6 +75,13 @@ fun RootNav() {
         null -> Routes.LOGIN
         true -> Routes.MAIN
         false -> Routes.LOGIN
+    }
+
+    // 딥링크로 초대 코드 도착 → 로그인 상태면 JoinTeam으로
+    androidx.compose.runtime.LaunchedEffect(loggedIn, initialInviteCode) {
+        if (loggedIn == true && initialInviteCode != null) {
+            nav.navigate(Routes.joinTeamRoute(initialInviteCode))
+        }
     }
 
     NavHost(navController = nav, startDestination = start) {
@@ -105,7 +114,16 @@ fun RootNav() {
             arguments = listOf(navArgument("id") { type = NavType.StringType }),
         ) { entry -> TeamInviteScreen(nav, entry.arguments!!.getString("id")!!) }
 
-        composable(Routes.JOIN_TEAM) { JoinTeamScreen(nav) }
+        composable(
+            Routes.JOIN_TEAM,
+            arguments = listOf(navArgument("code") {
+                type = NavType.StringType
+                defaultValue = ""
+                nullable = false
+            }),
+        ) { entry ->
+            JoinTeamScreen(nav, initialCode = entry.arguments?.getString("code").orEmpty())
+        }
 
         composable(Routes.WINDOW_LIST) { WindowListScreen(nav) }
         composable(Routes.WINDOW_EDIT) { WindowEditScreen(nav, windowId = null) }

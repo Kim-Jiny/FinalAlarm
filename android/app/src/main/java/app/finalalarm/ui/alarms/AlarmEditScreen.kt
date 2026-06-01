@@ -32,6 +32,7 @@ import java.util.TimeZone
 import javax.inject.Inject
 
 data class AlarmEditUi(
+    val editingId: String? = null,         // null = 생성 모드, 값 = 수정 모드
     val label: String = "기상",
     val kind: AlarmKind = AlarmKind.PERSONAL,
     val teams: List<TeamSummary> = emptyList(),
@@ -57,15 +58,33 @@ class AlarmEditVm @Inject constructor(
     private val _state = MutableStateFlow(AlarmEditUi())
     val state = _state.asStateFlow()
 
-    init { load() }
+    init { loadReferences() }
 
-    private fun load() = viewModelScope.launch {
+    private fun loadReferences() = viewModelScope.launch {
         val teams = runCatching { api.listTeams() }.getOrDefault(emptyList())
         val missions = runCatching { api.listMissions() }.getOrDefault(emptyList())
         _state.value = _state.value.copy(
             teams = teams,
             missions = missions,
-            missionId = missions.firstOrNull { it.isDefault }?.id ?: missions.firstOrNull()?.id,
+            missionId = _state.value.missionId
+                ?: missions.firstOrNull { it.isDefault }?.id ?: missions.firstOrNull()?.id,
+        )
+    }
+
+    fun loadExisting(id: String) = viewModelScope.launch {
+        val alarm = runCatching { api.getAlarm(id) }.getOrNull() ?: return@launch
+        _state.value = _state.value.copy(
+            editingId = alarm.id,
+            label = alarm.label,
+            kind = alarm.kind,
+            teamId = alarm.teamId,
+            timeOfDay = alarm.timeOfDay ?: _state.value.timeOfDay,
+            daysOfWeek = alarm.daysOfWeek ?: _state.value.daysOfWeek,
+            missionId = alarm.missionId,
+            snoozeEnabled = alarm.snoozeEnabled,
+            snoozeMinutes = alarm.snoozeMinutes,
+            snoozeMaxCount = alarm.snoozeMaxCount,
+            volume = alarm.volume,
         )
     }
 
@@ -92,26 +111,42 @@ class AlarmEditVm @Inject constructor(
         }
         _state.value = s.copy(saving = true, error = null)
         runCatching {
-            api.createAlarm(
-                CreateAlarmReq(
-                    kind = s.kind,
-                    teamId = s.teamId,
-                    label = s.label,
-                    timezone = TimeZone.getDefault().id,
-                    scheduleType = ScheduleType.RECURRING,
-                    timeOfDay = s.timeOfDay,
-                    daysOfWeek = s.daysOfWeek,
-                    soundUri = "system:default",
-                    volume = s.volume,
-                    volumeRampSeconds = 30,
-                    vibrationEnabled = true,
-                    vibrationPattern = VibrationPattern.PULSE,
-                    snoozeEnabled = s.snoozeEnabled,
-                    snoozeMinutes = s.snoozeMinutes,
-                    snoozeMaxCount = s.snoozeMaxCount,
-                    missionId = missionId,
-                ),
-            )
+            if (s.editingId == null) {
+                api.createAlarm(
+                    CreateAlarmReq(
+                        kind = s.kind,
+                        teamId = s.teamId,
+                        label = s.label,
+                        timezone = TimeZone.getDefault().id,
+                        scheduleType = ScheduleType.RECURRING,
+                        timeOfDay = s.timeOfDay,
+                        daysOfWeek = s.daysOfWeek,
+                        soundUri = "system:default",
+                        volume = s.volume,
+                        volumeRampSeconds = 30,
+                        vibrationEnabled = true,
+                        vibrationPattern = VibrationPattern.PULSE,
+                        snoozeEnabled = s.snoozeEnabled,
+                        snoozeMinutes = s.snoozeMinutes,
+                        snoozeMaxCount = s.snoozeMaxCount,
+                        missionId = missionId,
+                    ),
+                )
+            } else {
+                api.updateAlarm(
+                    s.editingId,
+                    mapOf(
+                        "label" to kotlinx.serialization.json.JsonPrimitive(s.label),
+                        "timeOfDay" to kotlinx.serialization.json.JsonPrimitive(s.timeOfDay),
+                        "daysOfWeek" to kotlinx.serialization.json.JsonPrimitive(s.daysOfWeek),
+                        "volume" to kotlinx.serialization.json.JsonPrimitive(s.volume),
+                        "snoozeEnabled" to kotlinx.serialization.json.JsonPrimitive(s.snoozeEnabled),
+                        "snoozeMinutes" to kotlinx.serialization.json.JsonPrimitive(s.snoozeMinutes),
+                        "snoozeMaxCount" to kotlinx.serialization.json.JsonPrimitive(s.snoozeMaxCount),
+                        "missionId" to kotlinx.serialization.json.JsonPrimitive(missionId),
+                    ),
+                )
+            }
         }.onSuccess {
             AlarmRescheduleWorker.enqueue(ctx)
             _state.value = _state.value.copy(saving = false, saved = true)
@@ -123,6 +158,7 @@ class AlarmEditVm @Inject constructor(
 @Composable
 fun AlarmEditScreen(nav: NavController, alarmId: String?, vm: AlarmEditVm = hiltViewModel()) {
     val s by vm.state.collectAsState()
+    LaunchedEffect(alarmId) { if (alarmId != null) vm.loadExisting(alarmId) }
     LaunchedEffect(s.saved) { if (s.saved) nav.popBackStack() }
 
     Scaffold(

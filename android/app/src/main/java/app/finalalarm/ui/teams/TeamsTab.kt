@@ -47,7 +47,7 @@ fun TeamsTab(nav: NavController, modifier: Modifier = Modifier, vm: TeamsTabVm =
     ) { inner ->
         Column(modifier = Modifier.padding(inner).padding(8.dp)) {
             OutlinedButton(
-                onClick = { nav.navigate(Routes.JOIN_TEAM) },
+                onClick = { nav.navigate(Routes.joinTeamRoute()) },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("초대 코드로 가입") }
             Spacer(Modifier.height(8.dp))

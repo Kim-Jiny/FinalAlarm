@@ -15,20 +15,40 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import app.finalalarm.core.network.userMessage
 import app.finalalarm.data.AuthRepository
+import app.finalalarm.data.api.FinalAlarmApi
 import app.finalalarm.ui.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class SettingsVm @Inject constructor(private val authRepo: AuthRepository) : ViewModel() {
+class SettingsVm @Inject constructor(
+    private val authRepo: AuthRepository,
+    private val api: FinalAlarmApi,
+) : ViewModel() {
+    var error by mutableStateOf<String?>(null)
+    var deleted by mutableStateOf(false)
+
     fun logout() = viewModelScope.launch { authRepo.logout() }
+
+    fun deleteAccount() = viewModelScope.launch {
+        error = null
+        runCatching { api.deleteMe() }
+            .onSuccess {
+                runCatching { authRepo.logout() }   // refresh 토큰 무효화 시도 (이미 401일 수 있음)
+                deleted = true
+            }
+            .onFailure { error = it.userMessage() }
+    }
 }
 
 @Composable
 fun SettingsTab(nav: NavController, modifier: Modifier = Modifier, vm: SettingsVm = hiltViewModel()) {
     val ctx = LocalContext.current
+    var confirmDelete by remember { mutableStateOf(false) }
+
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         Text("설정", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(16.dp))
@@ -70,5 +90,36 @@ fun SettingsTab(nav: NavController, modifier: Modifier = Modifier, vm: SettingsV
             onClick = vm::logout,
             modifier = Modifier.fillMaxWidth(),
         ) { Text("로그아웃") }
+
+        Spacer(Modifier.height(8.dp))
+        OutlinedButton(
+            onClick = { confirmDelete = true },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+        ) { Text("계정 삭제") }
+
+        vm.error?.let {
+            Spacer(Modifier.height(8.dp))
+            Text(it, color = MaterialTheme.colorScheme.error)
+        }
+    }
+
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("계정 삭제") },
+            text = { Text("정말 계정을 삭제할까요? 알람·팀 기록은 모두 사라지고 되돌릴 수 없습니다.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmDelete = false
+                        vm.deleteAccount()
+                    },
+                ) { Text("삭제", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDelete = false }) { Text("취소") }
+            },
+        )
     }
 }

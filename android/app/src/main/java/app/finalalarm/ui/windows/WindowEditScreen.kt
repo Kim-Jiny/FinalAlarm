@@ -21,6 +21,7 @@ import java.util.TimeZone
 import javax.inject.Inject
 
 data class WindowUi(
+    val editingId: String? = null,
     val teams: List<TeamSummary> = emptyList(),
     val teamId: String? = null,
     val start: String = "06:00",
@@ -38,6 +39,18 @@ class WindowEditVm @Inject constructor(private val api: FinalAlarmApi) : ViewMod
 
     init { viewModelScope.launch { _state.value = _state.value.copy(teams = runCatching { api.listTeams() }.getOrDefault(emptyList())) } }
 
+    fun loadExisting(id: String) = viewModelScope.launch {
+        val w = runCatching { api.listWindows() }.getOrDefault(emptyList()).firstOrNull { it.id == id }
+            ?: return@launch
+        _state.value = _state.value.copy(
+            editingId = w.id,
+            teamId = w.teamId,
+            start = w.startTime,
+            end = w.endTime,
+            days = w.daysOfWeek,
+        )
+    }
+
     fun onTeam(id: String) { _state.value = _state.value.copy(teamId = id) }
     fun onStart(v: String) { _state.value = _state.value.copy(start = v) }
     fun onEnd(v: String) { _state.value = _state.value.copy(end = v) }
@@ -48,7 +61,18 @@ class WindowEditVm @Inject constructor(private val api: FinalAlarmApi) : ViewMod
         val team = s.teamId ?: run { _state.value = s.copy(error = "팀 선택 필요"); return@launch }
         _state.value = s.copy(saving = true, error = null)
         runCatching {
-            api.createWindow(CreateWindowReq(team, s.start, s.end, s.days, TimeZone.getDefault().id))
+            if (s.editingId == null) {
+                api.createWindow(CreateWindowReq(team, s.start, s.end, s.days, TimeZone.getDefault().id))
+            } else {
+                api.updateWindow(
+                    s.editingId,
+                    mapOf(
+                        "startTime" to kotlinx.serialization.json.JsonPrimitive(s.start),
+                        "endTime" to kotlinx.serialization.json.JsonPrimitive(s.end),
+                        "daysOfWeek" to kotlinx.serialization.json.JsonPrimitive(s.days),
+                    ),
+                )
+            }
         }.onSuccess { _state.value = _state.value.copy(saving = false, saved = true) }
             .onFailure { _state.value = _state.value.copy(saving = false, error = it.userMessage()) }
     }
@@ -57,6 +81,7 @@ class WindowEditVm @Inject constructor(private val api: FinalAlarmApi) : ViewMod
 @Composable
 fun WindowEditScreen(nav: NavController, windowId: String?, vm: WindowEditVm = hiltViewModel()) {
     val s by vm.state.collectAsState()
+    LaunchedEffect(windowId) { if (windowId != null) vm.loadExisting(windowId) }
     LaunchedEffect(s.saved) { if (s.saved) nav.popBackStack() }
     Scaffold(
         topBar = { TopAppBar(title = { Text("알람 시간대") }) },

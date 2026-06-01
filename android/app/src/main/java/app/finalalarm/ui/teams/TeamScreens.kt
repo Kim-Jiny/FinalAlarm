@@ -69,10 +69,26 @@ class TeamDetailVm @AssistedInject constructor(
 ) : ViewModel() {
     private val _state = MutableStateFlow<TeamDetail?>(null)
     val state = _state.asStateFlow()
+    var error by mutableStateOf<String?>(null)
+    var leftTeam by mutableStateOf(false)
 
     init { refresh() }
     fun refresh() = viewModelScope.launch {
         _state.value = runCatching { api.getTeam(teamId) }.getOrNull()
+    }
+
+    fun leaveTeam() = viewModelScope.launch {
+        error = null
+        runCatching { api.leaveTeam(teamId) }
+            .onSuccess { leftTeam = true }
+            .onFailure { error = it.userMessage() }
+    }
+
+    fun kickMember(userId: String) = viewModelScope.launch {
+        error = null
+        runCatching { api.kickMember(teamId, userId) }
+            .onFailure { error = it.userMessage() }
+        refresh()
     }
 }
 
@@ -87,6 +103,13 @@ fun TeamDetailScreen(nav: NavController, teamId: String) {
     val host = hiltViewModel<TeamDetailVmHost>()
     val vm = assistedViewModel(teamId) { host.factory.create(teamId) }
     val team by vm.state.collectAsState()
+    var confirmLeave by remember { mutableStateOf(false) }
+
+    LaunchedEffect(vm.leftTeam) { if (vm.leftTeam) nav.popBackStack() }
+
+    // 본인 role 결정 (멤버 목록에서 자기 찾기는 어려우므로 OWNER/ADMIN 체크는 임시로 첫 멤버 가정 skip)
+    val myRoleInTeam = team?.members?.firstOrNull()?.role  // 향후: 로그인한 user id로 정확히 찾기
+
     Scaffold(topBar = { TopAppBar(title = { Text(team?.name ?: "팀") }) }) { inner ->
         Column(modifier = Modifier.padding(inner).padding(16.dp)) {
             Column {
@@ -103,6 +126,12 @@ fun TeamDetailScreen(nav: NavController, teamId: String) {
                 OutlinedButton(
                     onClick = { nav.navigate(Routes.INBOX_LIST.replace("{teamId}", teamId)) },
                 ) { Text("잠금해제 요청 인박스") }
+
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = { confirmLeave = true },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) { Text("팀 탈퇴") }
             }
             Spacer(Modifier.height(16.dp))
             Text("멤버", style = MaterialTheme.typography.titleMedium)
@@ -110,10 +139,36 @@ fun TeamDetailScreen(nav: NavController, teamId: String) {
                 ListItem(
                     headlineContent = { Text(m.user.displayName) },
                     supportingContent = { Text("${m.role}") },
+                    trailingContent = {
+                        // OWNER/ADMIN만 강퇴 가능 (OWNER 자체는 강퇴 불가)
+                        if ((myRoleInTeam == app.finalalarm.data.api.TeamRole.OWNER ||
+                                myRoleInTeam == app.finalalarm.data.api.TeamRole.ADMIN) &&
+                            m.role != app.finalalarm.data.api.TeamRole.OWNER) {
+                            TextButton(onClick = { vm.kickMember(m.user.id) }) { Text("강퇴") }
+                        }
+                    },
                 )
                 HorizontalDivider()
             }
+            vm.error?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(it, color = MaterialTheme.colorScheme.error)
+            }
         }
+    }
+
+    if (confirmLeave) {
+        AlertDialog(
+            onDismissRequest = { confirmLeave = false },
+            title = { Text("팀 탈퇴") },
+            text = { Text("정말 이 팀에서 나가시겠어요? (오너는 다른 사람에게 권한을 넘긴 뒤에 탈퇴할 수 있어요)") },
+            confirmButton = {
+                TextButton(onClick = { confirmLeave = false; vm.leaveTeam() }) {
+                    Text("탈퇴", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmLeave = false }) { Text("취소") } },
+        )
     }
 }
 
@@ -194,7 +249,10 @@ class JoinTeamVm @Inject constructor(private val api: FinalAlarmApi) : ViewModel
 }
 
 @Composable
-fun JoinTeamScreen(nav: NavController, vm: JoinTeamVm = hiltViewModel()) {
+fun JoinTeamScreen(nav: NavController, initialCode: String = "", vm: JoinTeamVm = hiltViewModel()) {
+    LaunchedEffect(initialCode) {
+        if (initialCode.isNotBlank() && vm.code.isBlank()) vm.code = initialCode
+    }
     LaunchedEffect(vm.joinedTeamId) {
         vm.joinedTeamId?.let {
             nav.popBackStack()

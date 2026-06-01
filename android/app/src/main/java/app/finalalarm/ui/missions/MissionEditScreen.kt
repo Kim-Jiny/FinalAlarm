@@ -22,6 +22,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import javax.inject.Inject
 
 data class MissionEditUi(
+    val editingId: String? = null,
     val type: MissionType = MissionType.MATH,
     val name: String = "",
     val difficulty: String = "medium",
@@ -39,6 +40,22 @@ data class MissionEditUi(
 class MissionEditVm @Inject constructor(private val api: FinalAlarmApi) : ViewModel() {
     private val _state = MutableStateFlow(MissionEditUi())
     val state = _state.asStateFlow()
+
+    fun loadExisting(id: String) = viewModelScope.launch {
+        val m = runCatching { api.getMission(id) }.getOrNull() ?: return@launch
+        val cfg = m.config
+        _state.value = _state.value.copy(
+            editingId = m.id,
+            type = m.type,
+            name = m.name,
+            isDefault = m.isDefault,
+            difficulty = cfg["difficulty"]?.toString()?.trim('"') ?: _state.value.difficulty,
+            questionCount = cfg["questionCount"]?.toString()?.toIntOrNull() ?: _state.value.questionCount,
+            photoMode = cfg["mode"]?.toString()?.trim('"') ?: _state.value.photoMode,
+            expectedCode = cfg["expectedCode"]?.toString()?.trim('"') ?: "",
+            shakeCount = cfg["shakeCount"]?.toString()?.toIntOrNull() ?: _state.value.shakeCount,
+        )
+    }
 
     fun onType(t: MissionType) { _state.value = _state.value.copy(type = t) }
     fun onName(v: String) { _state.value = _state.value.copy(name = v) }
@@ -66,7 +83,18 @@ class MissionEditVm @Inject constructor(private val api: FinalAlarmApi) : ViewMo
         }
         _state.value = s.copy(saving = true, error = null)
         runCatching {
-            api.createMission(CreateMissionReq(s.type, s.name.ifBlank { "${s.type}" }, config, s.isDefault))
+            if (s.editingId == null) {
+                api.createMission(CreateMissionReq(s.type, s.name.ifBlank { "${s.type}" }, config, s.isDefault))
+            } else {
+                api.updateMission(
+                    s.editingId,
+                    app.finalalarm.data.api.UpdateMissionReq(
+                        name = s.name.takeIf { it.isNotBlank() },
+                        config = config,
+                        isDefault = s.isDefault,
+                    ),
+                )
+            }
         }.onSuccess { _state.value = _state.value.copy(saving = false, saved = true) }
             .onFailure { _state.value = _state.value.copy(saving = false, error = it.userMessage()) }
     }
@@ -75,6 +103,7 @@ class MissionEditVm @Inject constructor(private val api: FinalAlarmApi) : ViewMo
 @Composable
 fun MissionEditScreen(nav: NavController, missionId: String?, vm: MissionEditVm = hiltViewModel()) {
     val s by vm.state.collectAsState()
+    LaunchedEffect(missionId) { if (missionId != null) vm.loadExisting(missionId) }
     LaunchedEffect(s.saved) { if (s.saved) nav.popBackStack() }
 
     Scaffold(

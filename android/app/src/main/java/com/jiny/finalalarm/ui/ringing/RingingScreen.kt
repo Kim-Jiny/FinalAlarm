@@ -157,68 +157,79 @@ private fun RingingPrompt(payload: AlarmRingPayload, ui: RingingUi, vm: RingingV
     val isTeamApproval = payload.alarmKind == "TEAM_APPROVAL"
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = com.jiny.finalalarm.ui.theme.FaSpacing.lg),
     ) {
+        Spacer(Modifier.weight(1f))
+
         if (isOffline) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                ),
-            ) {
-                Text(
-                    "오프라인 상태입니다. 연결 복구 시 자동 동기화됩니다.",
-                    modifier = Modifier.padding(12.dp),
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                )
-            }
-            Spacer(Modifier.height(24.dp))
+            Text(
+                "오프라인",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+            Spacer(Modifier.height(com.jiny.finalalarm.ui.theme.FaSpacing.sm))
         }
 
-        Text(payload.label.ifBlank { "알람" }, style = MaterialTheme.typography.headlineLarge, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(8.dp))
-        payload.senderDisplayName?.let {
-            Text("$it 님이 깨우고 있어요", style = MaterialTheme.typography.titleMedium)
-        }
-        Spacer(Modifier.height(48.dp))
+        Text(
+            payload.label.ifBlank { "알람" },
+            style = MaterialTheme.typography.displayLarge,
+        )
+        Spacer(Modifier.height(com.jiny.finalalarm.ui.theme.FaSpacing.sm))
+        Text(
+            payload.senderDisplayName?.let { "$it 님이 깨우는 중" } ?: "지금 일어날 시간",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        Spacer(Modifier.weight(1f))
 
         if (isTeamApproval) {
-            Button(
+            com.jiny.finalalarm.ui.components.PrimaryButton(
+                text = if (isOffline) "오프라인 — 요청 불가" else "팀원에게 잠금해제 요청",
                 onClick = vm::requestUnlock,
                 enabled = !isOffline,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(if (isOffline) "오프라인 — 요청 불가" else "팀원에게 잠금해제 요청")
-            }
+            )
         } else {
-            Button(onClick = vm::startMission, modifier = Modifier.fillMaxWidth()) {
-                Text("미션 시작해서 끄기")
-            }
+            com.jiny.finalalarm.ui.components.PrimaryButton(
+                text = "미션 시작해서 끄기",
+                onClick = vm::startMission,
+            )
         }
-        Spacer(Modifier.height(16.dp))
+
         if (payload.snoozeEnabled && payload.snoozeRemaining > 0) {
-            OutlinedButton(onClick = vm::snooze, modifier = Modifier.fillMaxWidth()) {
-                Text("${payload.snoozeMinutes}분 후 다시 (${payload.snoozeRemaining}회 남음)")
-            }
+            Spacer(Modifier.height(com.jiny.finalalarm.ui.theme.FaSpacing.sm))
+            com.jiny.finalalarm.ui.components.SecondaryButton(
+                text = "${payload.snoozeMinutes}분 뒤 다시",
+                onClick = vm::snooze,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
-        ui.error?.let { Spacer(Modifier.height(16.dp)); Text(it, color = MaterialTheme.colorScheme.error) }
+
+        ui.error?.let { com.jiny.finalalarm.ui.components.ErrorText(it) }
+        Spacer(Modifier.height(com.jiny.finalalarm.ui.theme.FaSpacing.xl))
     }
 }
 
 @Composable
 private fun WaitingApprovalScreen(payload: AlarmRingPayload, vm: RingingVm) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = com.jiny.finalalarm.ui.theme.FaSpacing.lg),
         verticalArrangement = Arrangement.Center,
     ) {
-        CircularProgressIndicator()
-        Spacer(Modifier.height(24.dp))
-        Text("팀원의 승인을 기다리는 중…", style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.height(8.dp))
-        Text("5분 내 응답이 없으면 만료됩니다", style = MaterialTheme.typography.bodySmall)
+        Text(
+            "팀원의 승인을 기다리는 중",
+            style = MaterialTheme.typography.headlineMedium,
+        )
+        Spacer(Modifier.height(com.jiny.finalalarm.ui.theme.FaSpacing.sm))
+        Text(
+            "5분 안에 응답이 없으면 만료됩니다.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

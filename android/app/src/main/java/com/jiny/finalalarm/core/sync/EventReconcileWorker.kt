@@ -9,10 +9,12 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.jiny.finalalarm.core.auth.TokenStore
 import com.jiny.finalalarm.data.api.CreateEventReq
 import com.jiny.finalalarm.data.api.FinalAlarmApi
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import retrofit2.HttpException
 import timber.log.Timber
 
 @HiltWorker
@@ -21,11 +23,17 @@ class EventReconcileWorker @AssistedInject constructor(
     @Assisted params: WorkerParameters,
     private val api: FinalAlarmApi,
     private val store: PendingEventStore,
+    private val tokenStore: TokenStore,
 ) : CoroutineWorker(ctx, params) {
 
     override suspend fun doWork(): Result {
         val pendings = store.list()
         if (pendings.isEmpty()) return Result.success()
+
+        if (tokenStore.access() == null) {
+            Timber.d("EventReconcileWorker: no token, will retry after login")
+            return Result.success()
+        }
 
         var allOk = true
         for (p in pendings) {
@@ -42,8 +50,13 @@ class EventReconcileWorker @AssistedInject constructor(
             if (result.isSuccess) {
                 store.remove(p.localId)
             } else {
+                val e = result.exceptionOrNull()
+                if (e is HttpException && e.code() == 401) {
+                    Timber.w("EventReconcileWorker: 401, will retry after login")
+                    return Result.success()  // 다음 로그인 시 재시도
+                }
                 allOk = false
-                Timber.w(result.exceptionOrNull(), "reconcile failed for ${p.localId}")
+                Timber.w(e, "reconcile failed for ${p.localId}")
             }
         }
         return if (allOk) Result.success() else Result.retry()

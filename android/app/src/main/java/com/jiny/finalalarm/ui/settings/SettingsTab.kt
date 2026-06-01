@@ -6,21 +6,27 @@ import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.jiny.finalalarm.core.network.userMessage
 import com.jiny.finalalarm.data.AuthRepository
 import com.jiny.finalalarm.data.api.ChangePasswordReq
 import com.jiny.finalalarm.data.api.FinalAlarmApi
 import com.jiny.finalalarm.ui.Routes
+import com.jiny.finalalarm.ui.components.ErrorText
+import com.jiny.finalalarm.ui.components.FaTextField
+import com.jiny.finalalarm.ui.components.ListRow
+import com.jiny.finalalarm.ui.components.Section
+import com.jiny.finalalarm.ui.theme.FaSpacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -51,10 +57,7 @@ class SettingsVm @Inject constructor(
         pwdError = null
         pwdSuccess = false
         runCatching { api.changePassword(ChangePasswordReq(current, new)) }
-            .onSuccess {
-                pwdSuccess = true
-                // 서버가 모든 refresh 토큰 revoke → 다음 401 시 강제 로그아웃 발생
-            }
+            .onSuccess { pwdSuccess = true }
             .onFailure { pwdError = it.userMessage() }
     }
 
@@ -67,97 +70,74 @@ fun SettingsTab(nav: NavController, modifier: Modifier = Modifier, vm: SettingsV
     var confirmDelete by remember { mutableStateOf(false) }
     var showPwdDialog by remember { mutableStateOf(false) }
 
-    Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
-        Text("설정", style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(16.dp))
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = FaSpacing.screen)
+            .verticalScroll(rememberScrollState()),
+    ) {
+        Spacer(Modifier.height(FaSpacing.md))
+        Text("설정", style = MaterialTheme.typography.displayLarge)
 
-        ListItem(
-            headlineContent = { Text("배터리 최적화 제외") },
-            supportingContent = {
-                val pm = ctx.getSystemService(Context.POWER_SERVICE) as PowerManager
-                Text(if (pm.isIgnoringBatteryOptimizations(ctx.packageName)) "허용됨" else "제한됨 (탭하여 변경)")
-            },
-            modifier = Modifier.padding(vertical = 4.dp),
-        )
-        Button(
-            onClick = {
-                ctx.startActivity(
-                    Intent(
-                        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                        Uri.parse("package:${ctx.packageName}"),
-                    ),
-                )
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text("배터리 설정 열기") }
-
-        Spacer(Modifier.height(16.dp))
-        OutlinedButton(
-            onClick = { nav.navigate(Routes.MISSION_LIST) },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text("내 미션 관리") }
-
-        Spacer(Modifier.height(8.dp))
-        OutlinedButton(
-            onClick = { nav.navigate(Routes.WINDOW_LIST) },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text("알람 시간대 관리") }
-
-        Spacer(Modifier.height(8.dp))
-        OutlinedButton(
-            onClick = { nav.navigate(Routes.HISTORY) },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text("알람 히스토리") }
-
-        Spacer(Modifier.height(16.dp))
-        OutlinedButton(
-            onClick = { showPwdDialog = true },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text("비밀번호 변경") }
-
-        Spacer(Modifier.height(8.dp))
-        OutlinedButton(
-            onClick = vm::logout,
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text("로그아웃") }
-
-        Spacer(Modifier.height(8.dp))
-        OutlinedButton(
-            onClick = { confirmDelete = true },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-        ) { Text("계정 삭제") }
-
-        vm.error?.let {
-            Spacer(Modifier.height(8.dp))
-            Text(it, color = MaterialTheme.colorScheme.error)
+        Section("알람") {
+            val pm = ctx.getSystemService(Context.POWER_SERVICE) as PowerManager
+            val ignored = pm.isIgnoringBatteryOptimizations(ctx.packageName)
+            ListRow(
+                headline = "배터리 최적화",
+                supporting = if (ignored) "제외됨" else "제한됨 — 탭하여 변경",
+                onClick = {
+                    ctx.startActivity(
+                        Intent(
+                            Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                            Uri.parse("package:${ctx.packageName}"),
+                        ),
+                    )
+                },
+            )
         }
+
+        Section("관리") {
+            ListRow("내 미션", onClick = { nav.navigate(Routes.MISSION_LIST) })
+            ListRow("알람 시간대", onClick = { nav.navigate(Routes.WINDOW_LIST) })
+            ListRow("히스토리", onClick = { nav.navigate(Routes.HISTORY) })
+        }
+
+        Section("계정") {
+            ListRow("비밀번호 변경", onClick = { showPwdDialog = true })
+            ListRow("로그아웃", onClick = { vm.logout() })
+            ListRow(
+                "계정 삭제",
+                destructive = true,
+                onClick = { confirmDelete = true },
+            )
+        }
+
+        vm.error?.let { ErrorText(it) }
+        Spacer(Modifier.height(FaSpacing.xxl))
     }
 
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("계정 삭제") },
-            text = { Text("정말 계정을 삭제할까요? 알람·팀 기록은 모두 사라지고 되돌릴 수 없습니다.") },
+            title = { Text("계정 삭제", style = MaterialTheme.typography.titleLarge) },
+            text = { Text("알람·팀 기록이 모두 사라집니다. 되돌릴 수 없어요.") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        confirmDelete = false
-                        vm.deleteAccount()
-                    },
-                ) { Text("삭제", color = MaterialTheme.colorScheme.error) }
+                TextButton(onClick = {
+                    confirmDelete = false
+                    vm.deleteAccount()
+                }) {
+                    Text("삭제", color = MaterialTheme.colorScheme.error)
+                }
             },
             dismissButton = {
                 TextButton(onClick = { confirmDelete = false }) { Text("취소") }
             },
+            containerColor = MaterialTheme.colorScheme.surface,
         )
     }
 
     if (showPwdDialog) {
-        ChangePasswordDialog(
-            vm = vm,
-            onDismiss = { showPwdDialog = false; vm.clearPwdState() },
-        )
+        ChangePasswordDialog(vm = vm, onDismiss = { showPwdDialog = false; vm.clearPwdState() })
     }
 }
 
@@ -171,39 +151,20 @@ private fun ChangePasswordDialog(vm: SettingsVm, onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("비밀번호 변경") },
+        title = { Text("비밀번호 변경", style = MaterialTheme.typography.titleLarge) },
         text = {
             Column {
-                OutlinedTextField(
-                    value = current, onValueChange = { current = it },
-                    label = { Text("현재 비밀번호") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = new, onValueChange = { new = it },
-                    label = { Text("새 비밀번호 (8자 이상)") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = confirm, onValueChange = { confirm = it },
-                    label = { Text("새 비밀번호 확인") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                vm.pwdError?.let {
-                    Spacer(Modifier.height(8.dp))
-                    Text(it, color = MaterialTheme.colorScheme.error)
-                }
+                FaTextField(current, { current = it }, "현재 비밀번호",
+                    visualTransformation = PasswordVisualTransformation())
+                Spacer(Modifier.height(FaSpacing.sm))
+                FaTextField(new, { new = it }, "새 비밀번호 (8자 이상)",
+                    visualTransformation = PasswordVisualTransformation())
+                Spacer(Modifier.height(FaSpacing.sm))
+                FaTextField(confirm, { confirm = it }, "새 비밀번호 확인",
+                    visualTransformation = PasswordVisualTransformation())
+                vm.pwdError?.let { ErrorText(it) }
                 if (new.isNotEmpty() && confirm.isNotEmpty() && new != confirm) {
-                    Spacer(Modifier.height(4.dp))
-                    Text("새 비밀번호가 일치하지 않습니다", color = MaterialTheme.colorScheme.error)
+                    ErrorText("비밀번호가 일치하지 않습니다")
                 }
             }
         },
@@ -214,5 +175,6 @@ private fun ChangePasswordDialog(vm: SettingsVm, onDismiss: () -> Unit) {
             ) { Text("변경") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } },
+        containerColor = MaterialTheme.colorScheme.surface,
     )
 }

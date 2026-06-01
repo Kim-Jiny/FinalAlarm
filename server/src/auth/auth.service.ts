@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { User } from '@prisma/client';
 import * as argon2 from 'argon2';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -15,6 +16,17 @@ function hashToken(token: string): string {
 
 function ttlToDate(days: number): Date {
   return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+}
+
+// passwordHash 제외하고 클라이언트에 노출할 필드만
+function publicUser(u: User) {
+  return {
+    id: u.id,
+    email: u.email,
+    displayName: u.displayName,
+    avatarUrl: u.avatarUrl,
+    timezone: u.timezone,
+  };
 }
 
 @Injectable()
@@ -37,7 +49,8 @@ export class AuthService {
         timezone: dto.timezone ?? 'Asia/Seoul',
       },
     });
-    return this.issueTokens(user.id, user.email);
+    const tokens = await this.issueTokens(user.id, user.email);
+    return { user: publicUser(user), ...tokens };
   }
 
   async login(dto: LoginDto) {
@@ -47,7 +60,8 @@ export class AuthService {
     const ok = await argon2.verify(user.passwordHash, dto.password);
     if (!ok) throw new AppError('UNAUTHORIZED', 'Invalid credentials');
 
-    return this.issueTokens(user.id, user.email);
+    const tokens = await this.issueTokens(user.id, user.email);
+    return { user: publicUser(user), ...tokens };
   }
 
   async refresh(refreshToken: string) {
@@ -64,7 +78,8 @@ export class AuthService {
       where: { id: record.id },
       data: { revokedAt: new Date() },
     });
-    return this.issueTokens(user.id, user.email);
+    const tokens = await this.issueTokens(user.id, user.email);
+    return { user: publicUser(user), ...tokens };
   }
 
   async logout(refreshToken: string) {

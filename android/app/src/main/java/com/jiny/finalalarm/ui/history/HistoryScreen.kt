@@ -6,7 +6,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,6 +13,9 @@ import androidx.navigation.NavController
 import com.jiny.finalalarm.data.api.AlarmEventDto
 import com.jiny.finalalarm.data.api.AlarmEventState
 import com.jiny.finalalarm.data.api.FinalAlarmApi
+import com.jiny.finalalarm.ui.components.EmptyState
+import com.jiny.finalalarm.ui.components.ListRow
+import com.jiny.finalalarm.ui.theme.FaSpacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,31 +40,42 @@ class HistoryVm @Inject constructor(private val api: FinalAlarmApi) : ViewModel(
 @Composable
 fun HistoryScreen(nav: NavController, vm: HistoryVm = hiltViewModel()) {
     val events by vm.state.collectAsState()
-    Scaffold(topBar = { TopAppBar(title = { Text("알람 히스토리") }) }) { inner ->
-        Column(modifier = Modifier.padding(inner).fillMaxSize()) {
-            if (vm.loading) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("히스토리", style = MaterialTheme.typography.titleLarge) },
+                navigationIcon = { TextButton(onClick = { nav.popBackStack() }) { Text("뒤로") } },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                ),
+            )
+        },
+    ) { inner ->
+        LazyColumn(
+            modifier = Modifier
+                .padding(inner)
+                .fillMaxSize()
+                .padding(horizontal = FaSpacing.screen),
+        ) {
+            if (events.isEmpty() && !vm.loading) {
+                item { EmptyState("기록이 없습니다") }
+            } else {
                 items(events) { e ->
-                    val label = e.triggeredAt.substringBefore('.').replace('T', ' ')
-                    val tag = when (e.state) {
-                        AlarmEventState.DISMISSED -> "✅ 해제"
-                        AlarmEventState.EXPIRED -> "⏰ 만료"
-                        AlarmEventState.SNOOZED -> "💤 스누즈"
-                        AlarmEventState.UNLOCK_REQUESTED -> "🔓 요청 중"
-                        AlarmEventState.UNLOCK_APPROVED -> "🔓 승인됨"
-                        AlarmEventState.RINGING -> "🔔 울리는 중"
+                    val when_ = e.triggeredAt.substringBefore('.').replace('T', ' ')
+                    val state = when (e.state) {
+                        AlarmEventState.DISMISSED -> "해제"
+                        AlarmEventState.EXPIRED -> "만료"
+                        AlarmEventState.SNOOZED -> "스누즈"
+                        AlarmEventState.UNLOCK_REQUESTED -> "요청 중"
+                        AlarmEventState.UNLOCK_APPROVED -> "승인됨"
+                        AlarmEventState.RINGING -> "울리는 중"
                     }
                     val source = if (e.senderUserId != null) "팀원이 깨움" else "본인 알람"
-                    ListItem(
-                        headlineContent = { Text(label) },
-                        supportingContent = { Text("$tag · $source · ${e.snoozeCount}회 스누즈") },
+                    ListRow(
+                        headline = when_,
+                        supporting = "$state · $source",
                     )
-                    HorizontalDivider()
-                }
-                if (events.isEmpty() && !vm.loading) item {
-                    Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                        Text("기록이 없습니다")
-                    }
                 }
             }
         }

@@ -1,8 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { TeamRole } from '@prisma/client';
+import { Prisma, TeamRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppError } from '../common/errors/app-error';
 import { MembershipHelper } from './membership.helper';
+
+// 멤버 포함 응답이 항상 같은 모양이도록 공통 include
+const TEAM_WITH_MEMBERS: Prisma.TeamInclude = {
+  members: {
+    include: {
+      user: { select: { id: true, displayName: true, avatarUrl: true, email: true, timezone: true } },
+    },
+    orderBy: { joinedAt: 'asc' },
+  },
+};
+
+const MEMBER_WITH_USER: Prisma.TeamMemberInclude = {
+  user: { select: { id: true, displayName: true, avatarUrl: true, email: true, timezone: true } },
+};
 
 @Injectable()
 export class TeamsService {
@@ -33,7 +47,10 @@ export class TeamsService {
       await tx.teamMember.create({
         data: { teamId: team.id, userId, role: TeamRole.OWNER },
       });
-      return team;
+      return tx.team.findUniqueOrThrow({
+        where: { id: team.id },
+        include: TEAM_WITH_MEMBERS,
+      });
     });
   }
 
@@ -41,14 +58,7 @@ export class TeamsService {
     await this.membership.requireMember(userId, teamId);
     const team = await this.prisma.team.findUnique({
       where: { id: teamId },
-      include: {
-        members: {
-          include: {
-            user: { select: { id: true, displayName: true, avatarUrl: true, email: true } },
-          },
-          orderBy: { joinedAt: 'asc' },
-        },
-      },
+      include: TEAM_WITH_MEMBERS,
     });
     if (!team) throw new AppError('NOT_FOUND', 'Team not found');
     return team;
@@ -59,6 +69,7 @@ export class TeamsService {
     return this.prisma.team.update({
       where: { id: teamId },
       data: { name },
+      include: TEAM_WITH_MEMBERS,
     });
   }
 
@@ -109,14 +120,15 @@ export class TeamsService {
     await this.membership.requireRole(actorId, teamId, [TeamRole.OWNER]);
     const target = await this.prisma.teamMember.findUnique({
       where: { teamId_userId: { teamId, userId: targetUserId } },
+      include: MEMBER_WITH_USER,
     });
     if (!target) throw new AppError('NOT_FOUND', 'Target not in team');
     if (target.role === role) return target;
     if (role !== TeamRole.OWNER) {
-      // Allow only one owner at a time
       return this.prisma.teamMember.update({
         where: { teamId_userId: { teamId, userId: targetUserId } },
         data: { role },
+        include: MEMBER_WITH_USER,
       });
     }
     // Transfer ownership atomically
@@ -128,6 +140,7 @@ export class TeamsService {
       return tx.teamMember.update({
         where: { teamId_userId: { teamId, userId: targetUserId } },
         data: { role: TeamRole.OWNER },
+        include: MEMBER_WITH_USER,
       });
     });
   }

@@ -9,8 +9,16 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.MaterialTheme
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.material3.Surface
+import com.jiny.finalalarm.ui.theme.FinalAlarmTheme
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.core.content.ContextCompat
 import com.jiny.finalalarm.core.alarm.AlarmForegroundService
 import com.jiny.finalalarm.core.alarm.AlarmRingPayload
@@ -24,6 +32,7 @@ class RingingActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
@@ -32,8 +41,21 @@ class RingingActivity : ComponentActivity() {
         }
         payload = AlarmRingPayload.fromBundle(intent.extras ?: Bundle())
         setContent {
-            MaterialTheme {
-                Surface { RingingRoot(payload, onFinished = { finishAndStopService() }) }
+            FinalAlarmTheme {
+                val focusManager = LocalFocusManager.current
+                val noInteraction = remember { MutableInteractionSource() }
+                Surface(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable(
+                            interactionSource = noInteraction,
+                            indication = null,
+                            onClick = { focusManager.clearFocus() },
+                        )
+                        .imePadding(),
+                ) {
+                    RingingRoot(payload, onFinished = { finishAndStopService() })
+                }
             }
         }
 

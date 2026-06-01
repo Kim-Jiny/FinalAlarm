@@ -5,6 +5,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -61,7 +62,7 @@ object Routes {
 @HiltViewModel
 class SessionVm @Inject constructor(authRepo: AuthRepository) : ViewModel() {
     val loggedIn = authRepo.loggedInFlow.stateIn(
-        scope = androidx.lifecycle.viewModelScope,
+        scope = viewModelScope,
         started = SharingStarted.Eagerly,
         initialValue = null,
     )

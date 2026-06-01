@@ -25,8 +25,10 @@ android {
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".debug"
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/api/v1/\"")
+            // applicationIdSuffix는 Firebase 클라이언트 등록을 두 개로 만들어야 해서 일단 제외.
+            // 디버그·릴리즈 동시 설치가 필요하면 Firebase 콘솔에 com.jiny.finalalarm.debug 추가 후 다시 enable.
+            // 실기기 테스트용: 맥의 LAN IP. Wi-Fi 환경 바뀌면 ./server/start-local.sh 출력의 IP로 교체.
+            buildConfigField("String", "API_BASE_URL", "\"http://172.30.1.22:3500/api/v1/\"")
         }
         release {
             isMinifyEnabled = true
@@ -38,7 +40,13 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "17" }
+    kotlinOptions {
+        jvmTarget = "17"
+        freeCompilerArgs += listOf(
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+            "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
+        )
+    }
     buildFeatures {
         compose = true
         buildConfig = true

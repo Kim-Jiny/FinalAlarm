@@ -6,10 +6,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.material3.Surface
+import com.jiny.finalalarm.ui.theme.FinalAlarmTheme
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import com.jiny.finalalarm.core.sync.EventReconcileWorker
 import com.jiny.finalalarm.ui.RootNav
 import dagger.hilt.android.AndroidEntryPoint
@@ -24,8 +29,21 @@ class MainActivity : ComponentActivity() {
 
         val inviteCode = extractInviteCode(intent)
         setContent {
-            MaterialTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
+            FinalAlarmTheme {
+                val focusManager = LocalFocusManager.current
+                val noInteraction = remember { MutableInteractionSource() }
+                Surface(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        // 배경 탭 → 포커스 해제 → 키보드 내려감. 자식 clickable이 먼저 소비하므로 빈 영역 탭에만 동작.
+                        .clickable(
+                            interactionSource = noInteraction,
+                            indication = null,
+                            onClick = { focusManager.clearFocus() },
+                        )
+                        // 키보드 영역만큼 컨텐츠를 위로 밀어줌 — TextField가 가리지 않게.
+                        .imePadding(),
+                ) {
                     RootNav(initialInviteCode = inviteCode)
                 }
             }
@@ -36,7 +54,6 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         if (extractInviteCode(intent) != null) {
-            // 앱이 떠 있는 상태에서 딥링크 탭 — RootNav 초기 라우팅을 다시 계산하려면 recreate
             recreate()
         }
     }

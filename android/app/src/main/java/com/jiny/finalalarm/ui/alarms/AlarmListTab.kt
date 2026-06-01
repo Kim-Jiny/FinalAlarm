@@ -1,16 +1,14 @@
 package com.jiny.finalalarm.ui.alarms
 
 import android.content.Context
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -19,6 +17,9 @@ import com.jiny.finalalarm.core.work.AlarmRescheduleWorker
 import com.jiny.finalalarm.data.api.AlarmDto
 import com.jiny.finalalarm.data.api.FinalAlarmApi
 import com.jiny.finalalarm.ui.Routes
+import com.jiny.finalalarm.ui.components.EmptyState
+import com.jiny.finalalarm.ui.components.ListRow
+import com.jiny.finalalarm.ui.theme.FaSpacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,38 +61,53 @@ class AlarmListVm @Inject constructor(
 @Composable
 fun AlarmListTab(nav: NavController, modifier: Modifier = Modifier, vm: AlarmListVm = hiltViewModel()) {
     val items by vm.state.collectAsState()
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(onClick = { nav.navigate(Routes.ALARM_EDIT) }) {
-                Icon(Icons.Outlined.Add, contentDescription = "추가")
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = FaSpacing.screen),
+    ) {
+        item {
+            Spacer(Modifier.height(FaSpacing.md))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            ) {
+                Text(
+                    "알람",
+                    style = MaterialTheme.typography.displayLarge,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = { nav.navigate(Routes.ALARM_EDIT) }) {
+                    Text("추가", style = MaterialTheme.typography.titleLarge)
+                }
             }
-        },
-        modifier = modifier,
-    ) { inner ->
-        LazyColumn(modifier = Modifier.padding(inner).fillMaxSize()) {
+            Spacer(Modifier.height(FaSpacing.md))
+        }
+
+        if (items.isEmpty()) {
+            item { EmptyState("알람을 추가해보세요") }
+        } else {
             items(items) { a ->
-                ListItem(
-                    modifier = Modifier
-                        .padding(horizontal = 8.dp)
-                        .clickable {
-                            nav.navigate(Routes.ALARM_EDIT_WITH_ID.replace("{id}", a.id))
-                        },
-                    headlineContent = { Text(a.label) },
-                    supportingContent = {
-                        Text("${a.timeOfDay ?: a.oneShotAt ?: "?"} • ${a.kind}")
+                ListRow(
+                    headline = a.label,
+                    supporting = "${a.timeOfDay ?: a.oneShotAt ?: "?"} · ${if (a.kind.name == "TEAM_APPROVAL") "팀 승인" else "개인"}",
+                    onClick = {
+                        nav.navigate(Routes.ALARM_EDIT_WITH_ID.replace("{id}", a.id))
                     },
-                    trailingContent = {
-                        Switch(checked = a.active, onCheckedChange = { vm.toggle(a.id, it) })
+                    trailing = {
+                        Switch(
+                            checked = a.active,
+                            onCheckedChange = { vm.toggle(a.id, it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                uncheckedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                                uncheckedTrackColor = MaterialTheme.colorScheme.outline,
+                                uncheckedBorderColor = MaterialTheme.colorScheme.outline,
+                            ),
+                        )
                     },
                 )
-                HorizontalDivider()
-            }
-            if (items.isEmpty()) {
-                item {
-                    Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                        Text("알람을 추가해보세요")
-                    }
-                }
             }
         }
     }

@@ -243,17 +243,20 @@ fun TeamInviteScreen(nav: NavController, teamId: String) {
             vm.error?.let { Spacer(Modifier.height(8.dp)); Text(it, color = MaterialTheme.colorScheme.error) }
             Spacer(Modifier.height(16.dp))
             invites.forEach { inv ->
-                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                    Column(Modifier.padding(12.dp)) {
-                        Text("코드: ${inv.code}", style = MaterialTheme.typography.titleMedium)
-                        Text("링크: ${inv.url}", style = MaterialTheme.typography.bodySmall)
-                        Spacer(Modifier.height(4.dp))
+                com.jiny.finalalarm.ui.components.ListRow(
+                    headline = inv.code,
+                    supporting = inv.url,
+                    trailing = {
                         Row {
-                            TextButton(onClick = { clip.setText(AnnotatedString(inv.code)) }) { Text("코드 복사") }
-                            TextButton(onClick = { clip.setText(AnnotatedString(inv.url)) }) { Text("링크 복사") }
+                            TextButton(onClick = { clip.setText(AnnotatedString(inv.code)) }) {
+                                Text("코드", style = MaterialTheme.typography.bodyMedium)
+                            }
+                            TextButton(onClick = { clip.setText(AnnotatedString(inv.url)) }) {
+                                Text("링크", style = MaterialTheme.typography.bodyMedium)
+                            }
                         }
-                    }
-                }
+                    },
+                )
             }
         }
     }

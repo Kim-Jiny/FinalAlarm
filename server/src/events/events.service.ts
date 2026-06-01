@@ -194,7 +194,7 @@ export class EventsService {
       throw new AppError('EVENT_INVALID_STATE', 'Only team-approval alarms');
     }
     // RINGING / SNOOZED / 이전 요청 만료된 UNLOCK_REQUESTED에서 재요청 허용
-    const allowedStates = [
+    const allowedStates: AlarmEventState[] = [
       AlarmEventState.RINGING,
       AlarmEventState.SNOOZED,
       AlarmEventState.UNLOCK_REQUESTED,

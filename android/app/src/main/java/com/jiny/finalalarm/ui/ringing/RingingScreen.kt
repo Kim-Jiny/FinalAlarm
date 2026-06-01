@@ -20,6 +20,7 @@ import com.jiny.finalalarm.core.sync.PendingEventStore
 import com.jiny.finalalarm.data.api.AlarmEventState
 import com.jiny.finalalarm.data.api.DismissReq
 import com.jiny.finalalarm.data.api.FinalAlarmApi
+import com.jiny.finalalarm.data.api.HeartbeatReq
 import com.jiny.finalalarm.data.api.MissionType
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.OffsetDateTime
@@ -58,7 +59,22 @@ class RingingVm @AssistedInject constructor(
     private val _state = MutableStateFlow(RingingUi())
     val state = _state.asStateFlow()
 
-    init { if (!isLocal) poll() }
+    init {
+        if (!isLocal) {
+            poll()
+            startHeartbeat()
+        }
+    }
+
+    private fun startHeartbeat() = viewModelScope.launch {
+        while (true) {
+            val phase = _state.value.phase
+            if (phase == RingingPhase.DONE || phase == RingingPhase.ERROR) return@launch
+            val ds = com.jiny.finalalarm.core.device.DeviceState.probe(appCtx)
+            runCatching { api.heartbeat(eventId, HeartbeatReq(volumePct = ds.volumePct, dnd = ds.dnd)) }
+            delay(5000)
+        }
+    }
 
     private fun poll() = viewModelScope.launch {
         while (true) {

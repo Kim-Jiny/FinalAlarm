@@ -12,6 +12,7 @@ struct RingingView: View {
     @State private var showingMission = false
     @State private var missionPassed = false
     @State private var loadingMission = true
+    @State private var heartbeatTask: Task<Void, Never>? = nil
 
     private let eventsRepo = EventsRepository.shared
     private let missionsRepo = MissionsRepository.shared
@@ -58,9 +59,13 @@ struct RingingView: View {
             Task {
                 await loadMission()
                 await reportTrigger()
+                await heartbeatLoop()
             }
         }
-        .onDisappear { AlarmAudioPlayer.shared.stop() }
+        .onDisappear {
+            AlarmAudioPlayer.shared.stop()
+            heartbeatTask?.cancel()
+        }
         .fullScreenCover(isPresented: $showingMission) {
             if let mission {
                 MissionRunnerView(
@@ -117,8 +122,23 @@ struct RingingView: View {
         _ = try? await eventsRepo.dismiss(id, req)
     }
 
+    /// 알람 울리는 동안 5초마다 디바이스 상태 라이브 보고.
+    private func heartbeatLoop() async {
+        heartbeatTask?.cancel()
+        heartbeatTask = Task {
+            while !Task.isCancelled {
+                if let id = eventId, !missionPassed {
+                    let ds = DeviceState.probe()
+                    try? await eventsRepo.heartbeat(id, volumePct: ds.volumePct, dnd: ds.dnd)
+                }
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+            }
+        }
+    }
+
     private func stop() {
         AlarmAudioPlayer.shared.stop()
+        heartbeatTask?.cancel()
         onDismiss()
     }
 }

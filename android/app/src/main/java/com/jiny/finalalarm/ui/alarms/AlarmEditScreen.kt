@@ -247,9 +247,10 @@ fun AlarmEditScreen(nav: NavController, alarmId: String?, vm: AlarmEditVm = hilt
                 }
 
                 Section("시각") {
-                    FaTextField(
-                        s.timeOfDay, vm::onTime, "HH:MM",
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    com.jiny.finalalarm.ui.components.TimePickerField(
+                        label = "기상 시각",
+                        value = s.timeOfDay,
+                        onValueChange = vm::onTime,
                     )
                 }
 

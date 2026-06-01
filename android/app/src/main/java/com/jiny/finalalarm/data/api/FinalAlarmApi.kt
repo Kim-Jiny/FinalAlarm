@@ -161,6 +161,9 @@ interface FinalAlarmApi {
     @POST("alarm-events/{id}/unlock-request")
     suspend fun requestUnlock(@Path("id") id: String): UnlockRequestDto
 
+    @POST("alarm-events/{id}/heartbeat")
+    suspend fun heartbeat(@Path("id") id: String, @Body req: HeartbeatReq): Map<String, Boolean>
+
     // ---- Unlock requests ----
     @GET("unlock-requests/inbox")
     suspend fun inbox(

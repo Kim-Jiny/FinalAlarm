@@ -122,6 +122,19 @@ final class TeamDetailVm {
         team = try? await repo.get(teamId)
     }
 
+    /// 누군가 알람 울리는 중이면 3초 폴링, 아니면 10초 폴링.
+    func livePoll() async {
+        while !Task.isCancelled {
+            let anyRinging = team?.members.contains(where: { m in
+                guard let s = m.lastAlarmSnapshot?.state else { return false }
+                return s == .RINGING || s == .SNOOZED || s == .UNLOCK_REQUESTED
+            }) ?? false
+            let delay: UInt64 = anyRinging ? 3_000_000_000 : 10_000_000_000
+            try? await Task.sleep(nanoseconds: delay)
+            team = try? await repo.get(teamId)
+        }
+    }
+
     func leave() async {
         do {
             try await repo.leave(teamId)
@@ -184,7 +197,7 @@ struct TeamDetailView: View {
                             ForEach(team.members) { m in
                                 ListRow(
                                     headline: m.user.displayName,
-                                    supporting: m.role.label,
+                                    supporting: memberSupporting(m),
                                     trailing: {
                                         memberTrailing(for: m)
                                     }
@@ -206,7 +219,10 @@ struct TeamDetailView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .task { await vm.refresh() }
+        .task {
+            await vm.refresh()
+            await vm.livePoll()
+        }
         .refreshable { await vm.refresh() }
         .onChange(of: vm.left) { _, left in
             if left { dismiss() }
@@ -219,6 +235,33 @@ struct TeamDetailView: View {
         } message: {
             Text("정말 나가시겠어요? 오너는 권한을 넘긴 뒤 탈퇴할 수 있어요.")
         }
+    }
+
+    private func memberSupporting(_ m: TeamMember) -> String {
+        var lines: [String] = [m.role.label]
+        if let s = m.lastAlarmSnapshot {
+            var parts: [String] = []
+            let isLive = s.state == .RINGING || s.state == .UNLOCK_REQUESTED || s.state == .SNOOZED
+            if isLive {
+                parts.append("🔔 지금 울리는 중")
+                let liveVol = s.liveVolumePct ?? s.volumePctAtTrigger
+                if let v = liveVol {
+                    let warn = v < 30 ? " ⚠️" : ""
+                    parts.append("라이브 볼륨 \(v)%\(warn)")
+                }
+                if s.liveDnd == true || s.dndAtTrigger == true { parts.append("방해금지") }
+            } else {
+                if let v = s.volumePctAtTrigger {
+                    let warn = v < 30 ? " ⚠️" : ""
+                    parts.append("최근 볼륨 \(v)%\(warn)")
+                }
+                if s.dndAtTrigger == true { parts.append("방해금지") }
+            }
+            if !parts.isEmpty {
+                lines.append(parts.joined(separator: " · "))
+            }
+        }
+        return lines.joined(separator: "\n")
     }
 
     @ViewBuilder

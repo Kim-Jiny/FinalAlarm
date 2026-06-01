@@ -25,6 +25,7 @@ import com.jiny.finalalarm.ui.components.HelloHeader
 import com.jiny.finalalarm.ui.components.ListRow
 import com.jiny.finalalarm.ui.components.PrimaryButton
 import com.jiny.finalalarm.ui.components.Section
+import com.jiny.finalalarm.ui.components.TimePickerField
 import com.jiny.finalalarm.ui.components.WarmBackground
 import com.jiny.finalalarm.ui.theme.FA
 import com.jiny.finalalarm.ui.theme.FaSpacing
@@ -139,9 +140,9 @@ fun WindowEditScreen(nav: NavController, windowId: String?, vm: WindowEditVm = h
             }
 
             Section("시간") {
-                FaTextField(s.start, vm::onStart, "시작 (HH:MM)")
+                TimePickerField("시작", s.start, vm::onStart)
                 Spacer(Modifier.height(FaSpacing.sm))
-                FaTextField(s.end, vm::onEnd, "끝 (HH:MM)")
+                TimePickerField("끝", s.end, vm::onEnd)
             }
 
             Section("요일") {

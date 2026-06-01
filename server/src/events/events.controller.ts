@@ -11,7 +11,7 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUserId } from '../common/decorators/current-user.decorator';
 import { EventsService } from './events.service';
-import { CreateEventDto, DismissDto } from './dto';
+import { CreateEventDto, DismissDto, HeartbeatDto } from './dto';
 
 @Controller('alarm-events')
 export class EventsController {
@@ -66,6 +66,17 @@ export class EventsController {
       volumePct: dto.volumePct,
       dnd: dto.dnd,
     });
+  }
+
+  // 알람 울리는 동안 5초 간격 라이브 디바이스 상태 보고
+  @Post(':id/heartbeat')
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  heartbeat(
+    @CurrentUserId() userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: HeartbeatDto,
+  ) {
+    return this.events.heartbeat(userId, id, dto.volumePct, dto.dnd);
   }
 
   @Post(':id/unlock-request')

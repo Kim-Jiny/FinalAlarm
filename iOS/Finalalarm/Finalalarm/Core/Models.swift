@@ -63,10 +63,34 @@ struct TeamSummary: Codable, Identifiable {
 }
 
 struct TeamMember: Codable, Identifiable {
-    let id: String
+    let teamId: String
+    let userId: String
     let role: TeamRole
     let user: PublicUser
     let joinedAt: String
+    let lastAlarmSnapshot: LastAlarmSnapshot?
+
+    var id: String { "\(teamId)/\(userId)" }
+}
+
+struct LastAlarmSnapshot: Codable {
+    let id: String
+    let targetUserId: String
+    let state: AlarmEventState
+    let triggeredAt: String
+    let dismissedAt: String?
+    let volumePctAtTrigger: Int?
+    let dndAtTrigger: Bool?
+    let volumePctAtDismiss: Int?
+    let dndAtDismiss: Bool?
+    let lastSeenAt: String?
+    let liveVolumePct: Int?
+    let liveDnd: Bool?
+}
+
+struct HeartbeatRequest: Codable {
+    let volumePct: Int
+    let dnd: Bool?
 }
 
 struct TeamDetail: Codable, Identifiable {

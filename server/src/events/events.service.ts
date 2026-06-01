@@ -104,6 +104,31 @@ export class EventsService {
     });
   }
 
+  async heartbeat(userId: string, id: string, volumePct: number, dnd?: boolean) {
+    const event = await this.prisma.alarmEvent.findUnique({ where: { id } });
+    if (!event) throw new AppError('NOT_FOUND', 'Event not found');
+    if (event.targetUserId !== userId) throw new AppError('FORBIDDEN', 'No access');
+    const live: AlarmEventState[] = [
+      AlarmEventState.RINGING,
+      AlarmEventState.SNOOZED,
+      AlarmEventState.UNLOCK_REQUESTED,
+      AlarmEventState.UNLOCK_APPROVED,
+    ];
+    if (!live.includes(event.state)) {
+      // 이미 끝난 알람은 heartbeat 무시
+      return { ok: true, ignored: true };
+    }
+    await this.prisma.alarmEvent.update({
+      where: { id },
+      data: {
+        lastSeenAt: new Date(),
+        liveVolumePct: volumePct,
+        liveDnd: dnd ?? null,
+      },
+    });
+    return { ok: true };
+  }
+
   async snooze(userId: string, id: string) {
     const event = await this.prisma.alarmEvent.findUnique({
       where: { id },

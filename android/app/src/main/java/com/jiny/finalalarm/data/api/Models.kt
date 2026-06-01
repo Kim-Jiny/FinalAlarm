@@ -98,7 +98,27 @@ data class TeamMemberDto(
     val role: TeamRole,
     val joinedAt: String,
     val user: UserDto,
+    val lastAlarmSnapshot: LastAlarmSnapshot? = null,
 )
+
+@Serializable
+data class LastAlarmSnapshot(
+    val id: String,
+    val targetUserId: String,
+    val state: AlarmEventState,
+    val triggeredAt: String,
+    val dismissedAt: String? = null,
+    val volumePctAtTrigger: Int? = null,
+    val dndAtTrigger: Boolean? = null,
+    val volumePctAtDismiss: Int? = null,
+    val dndAtDismiss: Boolean? = null,
+    val lastSeenAt: String? = null,
+    val liveVolumePct: Int? = null,
+    val liveDnd: Boolean? = null,
+)
+
+@Serializable
+data class HeartbeatReq(val volumePct: Int, val dnd: Boolean? = null)
 
 @Serializable
 data class CreateTeamReq(val name: String)

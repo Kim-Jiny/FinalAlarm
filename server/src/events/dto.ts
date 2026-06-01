@@ -75,3 +75,15 @@ export class CreateEventDto {
   @IsOptional()
   dndAtDismiss?: boolean;
 }
+
+// 알람 울리는 도중 디바이스 상태 라이브 전송
+export class HeartbeatDto {
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  volumePct!: number;
+
+  @IsBoolean()
+  @IsOptional()
+  dnd?: boolean;
+}

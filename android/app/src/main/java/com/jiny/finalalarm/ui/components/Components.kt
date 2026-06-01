@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -311,6 +313,80 @@ fun ErrorText(text: String) {
             color = MaterialTheme.colorScheme.error,
         )
     }
+}
+
+/**
+ * 시각 입력 — 텍스트 필드 대신 시계 다이얼로그를 띄움.
+ * value: "HH:mm" 포맷. 키보드 안 띄우니 화면 가림 문제 없음.
+ */
+@Composable
+fun TimePickerField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    val (initialHour, initialMinute) = remember(value) { parseHourMinute(value) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .clickable { open = true }
+            .padding(horizontal = FaSpacing.md, vertical = FaSpacing.md),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                value,
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+        }
+    }
+
+    if (open) {
+        val state = rememberTimePickerState(
+            initialHour = initialHour,
+            initialMinute = initialMinute,
+            is24Hour = true,
+        )
+        AlertDialog(
+            onDismissRequest = { open = false },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(label, style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(FaSpacing.md))
+                    TimePicker(state = state)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val h = state.hour.toString().padStart(2, '0')
+                    val m = state.minute.toString().padStart(2, '0')
+                    onValueChange("$h:$m")
+                    open = false
+                }) { Text("확인") }
+            },
+            dismissButton = {
+                TextButton(onClick = { open = false }) { Text("취소") }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+        )
+    }
+}
+
+private fun parseHourMinute(s: String): Pair<Int, Int> {
+    val parts = s.split(":")
+    val h = parts.getOrNull(0)?.toIntOrNull()?.coerceIn(0, 23) ?: 7
+    val m = parts.getOrNull(1)?.toIntOrNull()?.coerceIn(0, 59) ?: 0
+    return h to m
 }
 
 /**

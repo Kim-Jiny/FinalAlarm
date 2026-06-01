@@ -61,7 +61,44 @@ export class TeamsService {
       include: TEAM_WITH_MEMBERS,
     });
     if (!team) throw new AppError('NOT_FOUND', 'Team not found');
-    return team;
+
+    // 멤버별 최근 알람 이벤트 요약 — 팀원이 "이 사람 평소 알람 상태" 확인용
+    const members = team.members as unknown as Array<{
+      userId: string;
+      teamId: string;
+      role: TeamRole;
+      joinedAt: Date;
+      user: { id: string };
+    }>;
+    const userIds = members.map((m) => m.user.id);
+    const lastEvents = await this.prisma.alarmEvent.findMany({
+      where: { targetUserId: { in: userIds } },
+      orderBy: [{ targetUserId: 'asc' }, { triggeredAt: 'desc' }],
+      distinct: ['targetUserId'],
+      select: {
+        id: true,
+        targetUserId: true,
+        state: true,
+        triggeredAt: true,
+        dismissedAt: true,
+        volumePctAtTrigger: true,
+        dndAtTrigger: true,
+        volumePctAtDismiss: true,
+        dndAtDismiss: true,
+        lastSeenAt: true,
+        liveVolumePct: true,
+        liveDnd: true,
+      },
+    });
+    const byUser = new Map(lastEvents.map((e) => [e.targetUserId, e]));
+
+    return {
+      ...team,
+      members: members.map((m) => ({
+        ...m,
+        lastAlarmSnapshot: byUser.get(m.user.id) ?? null,
+      })),
+    };
   }
 
   async updateTeam(userId: string, teamId: string, name?: string) {

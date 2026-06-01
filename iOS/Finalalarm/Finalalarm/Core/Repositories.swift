@@ -164,6 +164,10 @@ final class EventsRepository {
         try await api.post("alarm-events/\(id)/dismiss", req)
     }
 
+    func heartbeat(_ id: String, volumePct: Int, dnd: Bool?) async throws {
+        try await api.postNoContent("alarm-events/\(id)/heartbeat", HeartbeatRequest(volumePct: volumePct, dnd: dnd))
+    }
+
     func inbox(_ teamId: String, status: UnlockRequestStatus = .PENDING) async throws -> [UnlockRequestDto] {
         try await api.get("teams/\(teamId)/unlock-requests", query: ["status": status.rawValue])
     }

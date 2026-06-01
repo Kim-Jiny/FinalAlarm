@@ -116,6 +116,25 @@ class TeamDetailVm @AssistedInject constructor(
         _state.value = runCatching { api.getTeam(teamId) }.getOrNull()
     }
 
+    /// 누군가 알람 울리고 있으면 3초 간격으로 라이브 상태 폴링.
+    /// onActive=false면 정지. 화면 떠나면 viewModelScope 자동 해제.
+    fun startLivePollIfRinging() = viewModelScope.launch {
+        while (true) {
+            val members = _state.value?.members ?: emptyList()
+            val anyRinging = members.any { it.lastAlarmSnapshot?.state?.let { s ->
+                s == com.jiny.finalalarm.data.api.AlarmEventState.RINGING ||
+                s == com.jiny.finalalarm.data.api.AlarmEventState.SNOOZED ||
+                s == com.jiny.finalalarm.data.api.AlarmEventState.UNLOCK_REQUESTED
+            } ?: false }
+            if (!anyRinging) {
+                kotlinx.coroutines.delay(10_000)  // idle이면 10초마다 체크
+            } else {
+                kotlinx.coroutines.delay(3_000)
+            }
+            _state.value = runCatching { api.getTeam(teamId) }.getOrNull()
+        }
+    }
+
     fun leaveTeam() = viewModelScope.launch {
         error = null
         runCatching { api.leaveTeam(teamId) }
@@ -154,6 +173,7 @@ fun TeamDetailScreen(nav: NavController, teamId: String) {
     var confirmLeave by remember { mutableStateOf(false) }
 
     LaunchedEffect(vm.leftTeam) { if (vm.leftTeam) nav.popBackStack() }
+    LaunchedEffect(Unit) { vm.startLivePollIfRinging() }
 
     val myRoleInTeam = remember(team, vm.myUserId) {
         val uid = vm.myUserId ?: return@remember null
@@ -211,9 +231,33 @@ fun TeamDetailScreen(nav: NavController, teamId: String) {
                         TeamRole.ADMIN -> "관리자"
                         TeamRole.MEMBER -> "멤버"
                     }
+                    val snap = m.lastAlarmSnapshot
+                    val deviceNote = snap?.let { s ->
+                        val parts = mutableListOf<String>()
+                        val isLive = s.state == com.jiny.finalalarm.data.api.AlarmEventState.RINGING ||
+                            s.state == com.jiny.finalalarm.data.api.AlarmEventState.UNLOCK_REQUESTED ||
+                            s.state == com.jiny.finalalarm.data.api.AlarmEventState.SNOOZED
+                        if (isLive) {
+                            parts += "🔔 지금 울리는 중"
+                            val liveVol = s.liveVolumePct ?: s.volumePctAtTrigger
+                            liveVol?.let { v ->
+                                val warn = if (v < 30) " ⚠️" else ""
+                                parts += "라이브 볼륨 ${v}%$warn"
+                            }
+                            if (s.liveDnd == true || s.dndAtTrigger == true) parts += "방해금지"
+                        } else {
+                            s.volumePctAtTrigger?.let { v ->
+                                val warn = if (v < 30) " ⚠️" else ""
+                                parts += "최근 볼륨 ${v}%$warn"
+                            }
+                            if (s.dndAtTrigger == true) parts += "방해금지"
+                        }
+                        parts.joinToString(" · ").takeIf { it.isNotBlank() }
+                    }
+                    val supporting = listOfNotNull(roleLabel, deviceNote).joinToString("\n")
                     ListRow(
                         headline = m.user.displayName,
-                        supporting = roleLabel,
+                        supporting = supporting,
                         trailing = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (isOwner && m.role != TeamRole.OWNER) {

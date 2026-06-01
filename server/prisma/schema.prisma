@@ -269,6 +269,10 @@ model AlarmEvent {
   dndAtTrigger       Boolean?   @map("dnd_at_trigger")
   volumePctAtDismiss Int?       @map("volume_pct_at_dismiss")
   dndAtDismiss       Boolean?   @map("dnd_at_dismiss")
+  // 알람 울리는 도중 라이브 모니터링 — 클라가 5초마다 heartbeat
+  lastSeenAt    DateTime?       @map("last_seen_at") @db.Timestamptz
+  liveVolumePct Int?            @map("live_volume_pct")
+  liveDnd       Boolean?        @map("live_dnd")
   createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz
 
   definition AlarmDefinition? @relation(fields: [definitionId], references: [id], onDelete: SetNull)

@@ -1,0 +1,16 @@
+## iOS Swift5 클라이언트 생성 설정 (URLSession + Codable)
+generatorName: swift5
+library: urlsession
+
+projectName: FinalAlarmAPI
+
+additionalProperties:
+  useClasses: false
+  responseAs: AsyncAwait
+  swiftPackagePath: FinalAlarmAPI
+
+globalProperties:
+  apiTests: false
+  apiDocs: false
+  modelTests: false
+  modelDocs: false

@@ -1,0 +1,15 @@
+{
+  "name": "finalalarm",
+  "version": "1.0.0",
+  "description": "Root scripts — OpenAPI codegen orchestration",
+  "private": true,
+  "scripts": {
+    "openapi:export": "npm run --prefix server openapi:export && cp server/openapi.json openapi.json",
+    "codegen:android": "npx openapi-generator-cli generate -i openapi.json -g kotlin -c codegen/android.yaml -o codegen/out/android",
+    "codegen:ios": "npx openapi-generator-cli generate -i openapi.json -g swift5 -c codegen/ios.yaml -o codegen/out/ios",
+    "codegen": "npm run openapi:export && npm run codegen:android && npm run codegen:ios"
+  },
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.13.4"
+  }
+}

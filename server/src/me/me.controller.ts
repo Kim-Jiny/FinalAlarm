@@ -1,10 +1,12 @@
 import { Body, Controller, Delete, Get, HttpCode, Patch, Post } from '@nestjs/common';
+import { ApiBearerAuth, ApiNoContentResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { IsOptional, IsString, IsUrl, MinLength } from 'class-validator';
 import { TeamRole } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
 import { CurrentUserId } from '../common/decorators/current-user.decorator';
 import { AppError } from '../common/errors/app-error';
+import { UserDto } from '../common/dto/responses';
 
 class UpdateMeDto {
   @IsString()
@@ -31,11 +33,14 @@ class ChangePasswordDto {
   newPassword!: string;
 }
 
+@ApiTags('me')
+@ApiBearerAuth('access-token')
 @Controller('me')
 export class MeController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get()
+  @ApiOkResponse({ type: UserDto })
   async getMe(@CurrentUserId() userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -53,6 +58,7 @@ export class MeController {
   }
 
   @Patch()
+  @ApiOkResponse({ type: UserDto })
   async updateMe(@CurrentUserId() userId: string, @Body() dto: UpdateMeDto) {
     return this.prisma.user.update({
       where: { id: userId },
@@ -69,6 +75,7 @@ export class MeController {
 
   @Post('password')
   @HttpCode(204)
+  @ApiNoContentResponse()
   async changePassword(@CurrentUserId() userId: string, @Body() dto: ChangePasswordDto) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new AppError('NOT_FOUND', 'User not found');
@@ -90,6 +97,7 @@ export class MeController {
 
   @Delete()
   @HttpCode(204)
+  @ApiNoContentResponse()
   async deleteMe(@CurrentUserId() userId: string) {
     await this.prisma.$transaction(async (tx) => {
       // 본인이 OWNER인 팀들 처리

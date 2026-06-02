@@ -8,22 +8,32 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUserId } from '../common/decorators/current-user.decorator';
 import { EventsService } from './events.service';
 import { CreateEventDto, DismissDto, HeartbeatDto } from './dto';
+import {
+  AlarmEventDto,
+  HeartbeatAckDto,
+  UnlockRequestDto,
+} from '../common/dto/responses';
 
+@ApiTags('alarm-events')
+@ApiBearerAuth('access-token')
 @Controller('alarm-events')
 export class EventsController {
   constructor(private readonly events: EventsService) {}
 
   @Get()
+  @ApiOkResponse({ type: [AlarmEventDto] })
   listActive(@CurrentUserId() userId: string) {
     return this.events.listActive(userId);
   }
 
   // 클라 로컬 알람이 발사됐을 때 호출
   @Post()
+  @ApiOkResponse({ type: AlarmEventDto })
   create(@CurrentUserId() userId: string, @Body() dto: CreateEventDto) {
     return this.events.createFromDefinition(userId, dto.definitionId, {
       triggeredAt: dto.triggeredAt,
@@ -37,6 +47,7 @@ export class EventsController {
   }
 
   @Get('history')
+  @ApiOkResponse({ type: [AlarmEventDto] })
   history(
     @CurrentUserId() userId: string,
     @Query('from') from?: string,
@@ -47,16 +58,19 @@ export class EventsController {
   }
 
   @Get(':id')
+  @ApiOkResponse({ type: AlarmEventDto })
   get(@CurrentUserId() userId: string, @Param('id', ParseUUIDPipe) id: string) {
     return this.events.get(userId, id);
   }
 
   @Post(':id/snooze')
+  @ApiOkResponse({ type: AlarmEventDto })
   snooze(@CurrentUserId() userId: string, @Param('id', ParseUUIDPipe) id: string) {
     return this.events.snooze(userId, id);
   }
 
   @Post(':id/dismiss')
+  @ApiOkResponse({ type: AlarmEventDto })
   dismiss(
     @CurrentUserId() userId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -71,6 +85,7 @@ export class EventsController {
   // 알람 울리는 동안 5초 간격 라이브 디바이스 상태 보고
   @Post(':id/heartbeat')
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @ApiOkResponse({ type: HeartbeatAckDto })
   heartbeat(
     @CurrentUserId() userId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -81,6 +96,7 @@ export class EventsController {
 
   @Post(':id/unlock-request')
   @Throttle({ default: { limit: 1, ttl: 60_000 } })
+  @ApiOkResponse({ type: UnlockRequestDto })
   unlockRequest(@CurrentUserId() userId: string, @Param('id', ParseUUIDPipe) id: string) {
     return this.events.requestUnlock(userId, id);
   }

@@ -1,0 +1,23 @@
+## Android Kotlin (Retrofit2 + kotlinx.serialization) 클라이언트 생성 설정
+generatorName: kotlin
+library: jvm-retrofit2
+
+# 생성된 패키지 — Hilt 모듈에서 inject 가능
+apiPackage: com.jiny.finalalarm.api
+modelPackage: com.jiny.finalalarm.api.model
+packageName: com.jiny.finalalarm.api
+
+# Serialization & DateTime
+additionalProperties:
+  serializationLibrary: kotlinx_serialization
+  dateLibrary: string
+  useCoroutines: true
+  enumPropertyNaming: original
+  parcelizeModels: false
+
+# 불필요한 산출물 제거
+globalProperties:
+  apiTests: false
+  apiDocs: false
+  modelTests: false
+  modelDocs: false

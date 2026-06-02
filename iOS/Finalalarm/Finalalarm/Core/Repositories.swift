@@ -78,7 +78,7 @@ final class TeamsRepository {
         try await api.post("teams/\(teamId)/invites", CreateInviteRequest(expiresInDays: expiresInDays))
     }
     func redeemInvite(_ code: String) async throws -> RedeemInviteResponse {
-        try await api.post("invites/\(code.uppercased())/redeem", Empty())
+        try await api.post("team-invites/\(code.uppercased())/redeem", Empty())
     }
 }
 
@@ -130,14 +130,14 @@ final class WindowsRepository {
     private let api: APIClient
     init(api: APIClient = .shared) { self.api = api }
 
-    func list() async throws -> [WindowDto] { try await api.get("windows") }
+    func list() async throws -> [WindowDto] { try await api.get("alarm-windows") }
     func create(_ req: CreateWindowRequest) async throws -> WindowDto {
-        try await api.post("windows", req)
+        try await api.post("alarm-windows", req)
     }
     func update(_ id: String, _ body: [String: AnyCodable]) async throws -> WindowDto {
-        try await api.patch("windows/\(id)", body)
+        try await api.patch("alarm-windows/\(id)", body)
     }
-    func delete(_ id: String) async throws { try await api.delete("windows/\(id)") }
+    func delete(_ id: String) async throws { try await api.delete("alarm-windows/\(id)") }
 }
 
 // MARK: - Alarm events / Inbox / History
@@ -149,11 +149,11 @@ final class EventsRepository {
     init(api: APIClient = .shared) { self.api = api }
 
     func history(limit: Int = 100) async throws -> [AlarmEventDto] {
-        try await api.get("alarm-events", query: ["limit": "\(limit)"])
+        try await api.get("alarm-events/history", query: ["limit": "\(limit)"])
     }
 
     func active() async throws -> [AlarmEventDto] {
-        try await api.get("alarm-events", query: ["active": "true"])
+        try await api.get("alarm-events")
     }
 
     func create(_ req: CreateAlarmEventRequest) async throws -> AlarmEventDto {
@@ -169,7 +169,7 @@ final class EventsRepository {
     }
 
     func inbox(_ teamId: String, status: UnlockRequestStatus = .PENDING) async throws -> [UnlockRequestDto] {
-        try await api.get("teams/\(teamId)/unlock-requests", query: ["status": status.rawValue])
+        try await api.get("unlock-requests/inbox", query: ["teamId": teamId, "status": status.rawValue])
     }
 
     func getUnlockRequest(_ id: String) async throws -> UnlockRequestDto {
@@ -193,7 +193,9 @@ final class PushRepository {
         try await api.postNoContent("push-alarm", req)
     }
 
-    func registerToken(_ token: String) async throws {
-        try await api.postNoContent("me/push-tokens", RegisterPushTokenRequest(token: token, platform: .ios))
+    func registerToken(_ token: String, deviceId: String) async throws {
+        try await api.postNoContent("push-tokens", RegisterPushTokenRequest(
+            token: token, platform: .IOS, deviceId: deviceId
+        ))
     }
 }

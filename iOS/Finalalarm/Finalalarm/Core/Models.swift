@@ -184,7 +184,7 @@ enum AlarmKind: String, Codable, CaseIterable {
 }
 
 enum ScheduleType: String, Codable { case RECURRING, ONE_SHOT }
-enum VibrationPattern: String, Codable, CaseIterable { case OFF, LIGHT, PULSE, STRONG }
+enum VibrationPattern: String, Codable, CaseIterable { case SHORT, MEDIUM, LONG, PULSE, HEARTBEAT }
 
 struct AlarmDto: Codable, Identifiable {
     let id: String
@@ -268,12 +268,17 @@ enum AlarmEventState: String, Codable {
 
 struct AlarmEventDto: Codable, Identifiable {
     let id: String
-    let alarmId: String?
-    let userId: String
+    let definitionId: String?
+    let windowId: String?
+    let targetUserId: String
     let senderUserId: String?
-    let triggeredAt: String
-    let dismissedAt: String?
+    let teamId: String?
+    let missionId: String
     let state: AlarmEventState
+    let snoozeCount: Int
+    let triggeredAt: String
+    let nextRingAt: String?
+    let dismissedAt: String?
     let volumePctAtTrigger: Int?
     let dndAtTrigger: Bool?
     let volumePctAtDismiss: Int?
@@ -300,12 +305,13 @@ struct DismissRequest: Codable {
 // MARK: - Unlock requests
 
 enum UnlockRequestStatus: String, Codable {
-    case PENDING, APPROVED, EXPIRED
+    case PENDING, APPROVED, EXPIRED, CANCELED
     var label: String {
         switch self {
         case .PENDING: return "대기 중"
         case .APPROVED: return "승인됨"
         case .EXPIRED: return "만료됨"
+        case .CANCELED: return "취소됨"
         }
     }
 }
@@ -330,11 +336,12 @@ struct PushAlarmRequest: Codable {
 
 // MARK: - Push tokens
 
-enum PushPlatform: String, Codable { case ios, android }
+enum PushPlatform: String, Codable { case IOS, ANDROID }
 
 struct RegisterPushTokenRequest: Codable {
     let token: String
     let platform: PushPlatform
+    let deviceId: String
 }
 
 // MARK: - AnyCodable (간단한 JSON 표현)

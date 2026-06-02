@@ -78,8 +78,19 @@ final class PendingEventStore {
 }
 
 /// 큐 비우기. 앱 active 시점에 호출.
-enum EventReconciler {
-    static func drain() async {
+/// 동시 호출 가드: scenePhase가 빠르게 active로 여러 번 전환되면 같은 pending이
+/// 중복 POST되는 걸 막기 위해 직렬화. Actor로 안전.
+actor EventReconciler {
+    static let shared = EventReconciler()
+    private var running = false
+
+    static func drain() async { await shared.drainInternal() }
+
+    private func drainInternal() async {
+        if running { return }
+        running = true
+        defer { running = false }
+
         let store = PendingEventStore.shared
         let pendings = store.list()
         guard !pendings.isEmpty, TokenStore.shared.isLoggedIn else { return }

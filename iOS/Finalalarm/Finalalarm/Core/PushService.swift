@@ -38,8 +38,13 @@ final class PushService: NSObject {
     func sendTokenToServer() {
         guard let token = fcmToken else { return }
         Task {
-            try? await PushRepository.shared.registerToken(token)
+            try? await PushRepository.shared.registerToken(token, deviceId: Self.deviceId())
         }
+    }
+
+    /// 안정적인 디바이스 식별자. 앱 재설치 시 변경됨 (Apple 정책상 OK).
+    static func deviceId() -> String {
+        UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
     }
 }
 

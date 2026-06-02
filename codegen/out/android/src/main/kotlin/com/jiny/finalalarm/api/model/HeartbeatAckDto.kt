@@ -24,9 +24,7 @@
 package com.jiny.finalalarm.api.model
 
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Contextual
+import com.google.gson.annotations.SerializedName
 
 /**
  * 
@@ -34,14 +32,14 @@ import kotlinx.serialization.Contextual
  * @param ok 
  * @param ignored 
  */
-@Serializable
+
 
 data class HeartbeatAckDto (
 
-    @SerialName(value = "ok")
+    @SerializedName("ok")
     val ok: kotlin.Boolean,
 
-    @SerialName(value = "ignored")
+    @SerializedName("ignored")
     val ignored: kotlin.Boolean? = null
 
 ) {

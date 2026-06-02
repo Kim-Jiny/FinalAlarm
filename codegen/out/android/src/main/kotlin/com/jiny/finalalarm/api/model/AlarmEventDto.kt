@@ -23,10 +23,11 @@
 
 package com.jiny.finalalarm.api.model
 
+import com.jiny.finalalarm.api.model.AlarmDto
+import com.jiny.finalalarm.api.model.AlarmOwnerDto
+import com.jiny.finalalarm.api.model.MissionDto
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Contextual
+import com.google.gson.annotations.SerializedName
 
 /**
  * 
@@ -52,73 +53,85 @@ import kotlinx.serialization.Contextual
  * @param lastSeenAt 
  * @param liveVolumePct 
  * @param liveDnd 
+ * @param definition 
+ * @param mission 
+ * @param sender 
  */
-@Serializable
+
 
 data class AlarmEventDto (
 
-    @SerialName(value = "id")
+    @SerializedName("id")
     val id: kotlin.String,
 
-    @SerialName(value = "targetUserId")
+    @SerializedName("targetUserId")
     val targetUserId: kotlin.String,
 
-    @SerialName(value = "missionId")
+    @SerializedName("missionId")
     val missionId: kotlin.String,
 
-    @SerialName(value = "state")
+    @SerializedName("state")
     val state: AlarmEventDto.State,
 
-    @Contextual @SerialName(value = "snoozeCount")
+    @SerializedName("snoozeCount")
     val snoozeCount: java.math.BigDecimal,
 
-    @SerialName(value = "triggeredAt")
+    @SerializedName("triggeredAt")
     val triggeredAt: kotlin.String,
 
-    @SerialName(value = "createdAt")
+    @SerializedName("createdAt")
     val createdAt: kotlin.String,
 
-    @Contextual @SerialName(value = "definitionId")
+    @SerializedName("definitionId")
     val definitionId: kotlin.Any? = null,
 
-    @Contextual @SerialName(value = "windowId")
+    @SerializedName("windowId")
     val windowId: kotlin.Any? = null,
 
-    @Contextual @SerialName(value = "senderUserId")
+    @SerializedName("senderUserId")
     val senderUserId: kotlin.Any? = null,
 
-    @Contextual @SerialName(value = "teamId")
+    @SerializedName("teamId")
     val teamId: kotlin.Any? = null,
 
-    @Contextual @SerialName(value = "lastSnoozedAt")
+    @SerializedName("lastSnoozedAt")
     val lastSnoozedAt: kotlin.Any? = null,
 
-    @Contextual @SerialName(value = "nextRingAt")
+    @SerializedName("nextRingAt")
     val nextRingAt: kotlin.Any? = null,
 
-    @Contextual @SerialName(value = "dismissedAt")
+    @SerializedName("dismissedAt")
     val dismissedAt: kotlin.Any? = null,
 
-    @Contextual @SerialName(value = "volumePctAtTrigger")
+    @SerializedName("volumePctAtTrigger")
     val volumePctAtTrigger: kotlin.Any? = null,
 
-    @Contextual @SerialName(value = "dndAtTrigger")
+    @SerializedName("dndAtTrigger")
     val dndAtTrigger: kotlin.Any? = null,
 
-    @Contextual @SerialName(value = "volumePctAtDismiss")
+    @SerializedName("volumePctAtDismiss")
     val volumePctAtDismiss: kotlin.Any? = null,
 
-    @Contextual @SerialName(value = "dndAtDismiss")
+    @SerializedName("dndAtDismiss")
     val dndAtDismiss: kotlin.Any? = null,
 
-    @Contextual @SerialName(value = "lastSeenAt")
+    @SerializedName("lastSeenAt")
     val lastSeenAt: kotlin.Any? = null,
 
-    @Contextual @SerialName(value = "liveVolumePct")
+    @SerializedName("liveVolumePct")
     val liveVolumePct: kotlin.Any? = null,
 
-    @Contextual @SerialName(value = "liveDnd")
-    val liveDnd: kotlin.Any? = null
+    @SerializedName("liveDnd")
+    val liveDnd: kotlin.Any? = null,
+
+    @SerializedName("definition")
+    val definition: AlarmDto? = null,
+
+    @SerializedName("mission")
+    val mission: MissionDto? = null,
+
+    @SerializedName("sender")
+    val sender: AlarmOwnerDto? = null
 
 ) {
 
@@ -127,14 +140,13 @@ data class AlarmEventDto (
      *
      * Values: RINGING,SNOOZED,UNLOCK_REQUESTED,UNLOCK_APPROVED,DISMISSED,EXPIRED
      */
-    @Serializable
     enum class State(val value: kotlin.String) {
-        @SerialName(value = "RINGING") RINGING("RINGING"),
-        @SerialName(value = "SNOOZED") SNOOZED("SNOOZED"),
-        @SerialName(value = "UNLOCK_REQUESTED") UNLOCK_REQUESTED("UNLOCK_REQUESTED"),
-        @SerialName(value = "UNLOCK_APPROVED") UNLOCK_APPROVED("UNLOCK_APPROVED"),
-        @SerialName(value = "DISMISSED") DISMISSED("DISMISSED"),
-        @SerialName(value = "EXPIRED") EXPIRED("EXPIRED");
+        @SerializedName(value = "RINGING") RINGING("RINGING"),
+        @SerializedName(value = "SNOOZED") SNOOZED("SNOOZED"),
+        @SerializedName(value = "UNLOCK_REQUESTED") UNLOCK_REQUESTED("UNLOCK_REQUESTED"),
+        @SerializedName(value = "UNLOCK_APPROVED") UNLOCK_APPROVED("UNLOCK_APPROVED"),
+        @SerializedName(value = "DISMISSED") DISMISSED("DISMISSED"),
+        @SerializedName(value = "EXPIRED") EXPIRED("EXPIRED");
     }
 
 }

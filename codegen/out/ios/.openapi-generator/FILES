@@ -1,5 +1,4 @@
 .gitignore
-.openapi-generator-ignore
 .swiftformat
 Cartfile
 FinalAlarmAPI.podspec
@@ -24,6 +23,8 @@ FinalAlarmAPI/JSONEncodingHelper.swift
 FinalAlarmAPI/Models.swift
 FinalAlarmAPI/Models/AlarmDto.swift
 FinalAlarmAPI/Models/AlarmEventDto.swift
+FinalAlarmAPI/Models/AlarmOwnerDto.swift
+FinalAlarmAPI/Models/AlarmTeamDto.swift
 FinalAlarmAPI/Models/AlarmWindowDto.swift
 FinalAlarmAPI/Models/AuthResponseDto.swift
 FinalAlarmAPI/Models/HeartbeatAckDto.swift

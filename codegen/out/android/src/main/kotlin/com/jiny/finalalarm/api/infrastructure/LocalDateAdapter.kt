@@ -1,22 +1,35 @@
 package com.jiny.finalalarm.api.infrastructure
 
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.SerialDescriptor
+import com.google.gson.TypeAdapter
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+import com.google.gson.stream.JsonToken.NULL
+import java.io.IOException
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-object LocalDateAdapter : KSerializer<LocalDate> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("LocalDate", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: LocalDate) {
-        encoder.encodeString(DateTimeFormatter.ISO_LOCAL_DATE.format(value))
+class LocalDateAdapter(private val formatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE) : TypeAdapter<LocalDate>() {
+    @Throws(IOException::class)
+    override fun write(out: JsonWriter?, value: LocalDate?) {
+        if (value == null) {
+            out?.nullValue()
+        } else {
+            out?.value(formatter.format(value))
+        }
     }
 
-    override fun deserialize(decoder: Decoder): LocalDate {
-        return LocalDate.parse(decoder.decodeString(), DateTimeFormatter.ISO_LOCAL_DATE)
+    @Throws(IOException::class)
+    override fun read(out: JsonReader?): LocalDate? {
+        out ?: return null
+
+        when (out.peek()) {
+            NULL -> {
+                out.nextNull()
+                return null
+            }
+            else -> {
+                return LocalDate.parse(out.nextString(), formatter)
+            }
+        }
     }
 }

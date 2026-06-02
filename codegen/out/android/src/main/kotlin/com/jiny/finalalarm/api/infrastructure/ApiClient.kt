@@ -10,20 +10,21 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Converter
 import retrofit2.CallAdapter
 import retrofit2.converter.scalars.ScalarsConverterFactory
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import retrofit2.converter.gson.GsonConverterFactory
 
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
-import com.jiny.finalalarm.api.infrastructure.Serializer.kotlinxSerializationJson
-import okhttp3.MediaType.Companion.toMediaType
 
 class ApiClient(
     private var baseUrl: String = defaultBasePath,
     private val okHttpClientBuilder: OkHttpClient.Builder? = null,
+    private val serializerBuilder: GsonBuilder = Serializer.gsonBuilder,
     private val callFactory: Call.Factory? = null,
     private val callAdapterFactories: List<CallAdapter.Factory> = listOf(
     ),
     private val converterFactories: List<Converter.Factory> = listOf(
         ScalarsConverterFactory.create(),
-        kotlinxSerializationJson.asConverterFactory("application/json".toMediaType()),
+        GsonConverterFactory.create(serializerBuilder.create()),
     )
 ) {
     private val apiAuthorizations = mutableMapOf<String, Interceptor>()
@@ -63,9 +64,9 @@ class ApiClient(
     constructor(
         baseUrl: String = defaultBasePath,
         okHttpClientBuilder: OkHttpClient.Builder? = null,
-        
+        serializerBuilder: GsonBuilder = Serializer.gsonBuilder,
         authNames: Array<String>
-    ) : this(baseUrl, okHttpClientBuilder) {
+    ) : this(baseUrl, okHttpClientBuilder, serializerBuilder) {
         authNames.forEach { authName ->
             val auth: Interceptor? = when (authName) { 
                 "access-token" -> HttpBearerAuth("bearer")
@@ -81,10 +82,10 @@ class ApiClient(
     constructor(
         baseUrl: String = defaultBasePath,
         okHttpClientBuilder: OkHttpClient.Builder? = null,
-        
+        serializerBuilder: GsonBuilder = Serializer.gsonBuilder,
         authName: String,
         bearerToken: String
-    ) : this(baseUrl, okHttpClientBuilder, arrayOf(authName)) {
+    ) : this(baseUrl, okHttpClientBuilder, serializerBuilder, arrayOf(authName)) {
         setBearerToken(bearerToken)
     }
 

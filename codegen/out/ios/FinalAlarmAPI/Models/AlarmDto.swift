@@ -49,8 +49,10 @@ public struct AlarmDto: Codable, JSONEncodable, Hashable {
     public var active: Bool
     public var createdAt: Date
     public var updatedAt: Date
+    public var owner: AlarmOwnerDto?
+    public var team: AlarmTeamDto?
 
-    public init(id: String, ownerId: String, kind: Kind, teamId: AnyCodable? = nil, label: String, timezone: String, scheduleType: ScheduleType, timeOfDay: AnyCodable? = nil, daysOfWeek: AnyCodable? = nil, oneShotAt: AnyCodable? = nil, soundUri: String, volume: Double, volumeRampSeconds: Double, vibrationEnabled: Bool, vibrationPattern: VibrationPattern, snoozeEnabled: Bool, snoozeMinutes: Double, snoozeMaxCount: Double, missionId: String, active: Bool, createdAt: Date, updatedAt: Date) {
+    public init(id: String, ownerId: String, kind: Kind, teamId: AnyCodable? = nil, label: String, timezone: String, scheduleType: ScheduleType, timeOfDay: AnyCodable? = nil, daysOfWeek: AnyCodable? = nil, oneShotAt: AnyCodable? = nil, soundUri: String, volume: Double, volumeRampSeconds: Double, vibrationEnabled: Bool, vibrationPattern: VibrationPattern, snoozeEnabled: Bool, snoozeMinutes: Double, snoozeMaxCount: Double, missionId: String, active: Bool, createdAt: Date, updatedAt: Date, owner: AlarmOwnerDto? = nil, team: AlarmTeamDto? = nil) {
         self.id = id
         self.ownerId = ownerId
         self.kind = kind
@@ -73,6 +75,8 @@ public struct AlarmDto: Codable, JSONEncodable, Hashable {
         self.active = active
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.owner = owner
+        self.team = team
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
@@ -98,6 +102,8 @@ public struct AlarmDto: Codable, JSONEncodable, Hashable {
         case active
         case createdAt
         case updatedAt
+        case owner
+        case team
     }
 
     // Encodable protocol methods
@@ -126,6 +132,8 @@ public struct AlarmDto: Codable, JSONEncodable, Hashable {
         try container.encode(active, forKey: .active)
         try container.encode(createdAt, forKey: .createdAt)
         try container.encode(updatedAt, forKey: .updatedAt)
+        try container.encodeIfPresent(owner, forKey: .owner)
+        try container.encodeIfPresent(team, forKey: .team)
     }
 }
 

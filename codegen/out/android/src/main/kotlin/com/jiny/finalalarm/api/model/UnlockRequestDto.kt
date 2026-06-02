@@ -24,9 +24,7 @@
 package com.jiny.finalalarm.api.model
 
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Contextual
+import com.google.gson.annotations.SerializedName
 
 /**
  * 
@@ -41,35 +39,35 @@ import kotlinx.serialization.Contextual
  * @param approvedBy 
  * @param approvedAt 
  */
-@Serializable
+
 
 data class UnlockRequestDto (
 
-    @SerialName(value = "id")
+    @SerializedName("id")
     val id: kotlin.String,
 
-    @SerialName(value = "eventId")
+    @SerializedName("eventId")
     val eventId: kotlin.String,
 
-    @SerialName(value = "requesterId")
+    @SerializedName("requesterId")
     val requesterId: kotlin.String,
 
-    @SerialName(value = "teamId")
+    @SerializedName("teamId")
     val teamId: kotlin.String,
 
-    @SerialName(value = "status")
+    @SerializedName("status")
     val status: UnlockRequestDto.Status,
 
-    @SerialName(value = "expiresAt")
+    @SerializedName("expiresAt")
     val expiresAt: kotlin.String,
 
-    @SerialName(value = "createdAt")
+    @SerializedName("createdAt")
     val createdAt: kotlin.String,
 
-    @Contextual @SerialName(value = "approvedBy")
+    @SerializedName("approvedBy")
     val approvedBy: kotlin.Any? = null,
 
-    @Contextual @SerialName(value = "approvedAt")
+    @SerializedName("approvedAt")
     val approvedAt: kotlin.Any? = null
 
 ) {
@@ -79,12 +77,11 @@ data class UnlockRequestDto (
      *
      * Values: PENDING,APPROVED,EXPIRED,CANCELED
      */
-    @Serializable
     enum class Status(val value: kotlin.String) {
-        @SerialName(value = "PENDING") PENDING("PENDING"),
-        @SerialName(value = "APPROVED") APPROVED("APPROVED"),
-        @SerialName(value = "EXPIRED") EXPIRED("EXPIRED"),
-        @SerialName(value = "CANCELED") CANCELED("CANCELED");
+        @SerializedName(value = "PENDING") PENDING("PENDING"),
+        @SerializedName(value = "APPROVED") APPROVED("APPROVED"),
+        @SerializedName(value = "EXPIRED") EXPIRED("EXPIRED"),
+        @SerializedName(value = "CANCELED") CANCELED("CANCELED");
     }
 
 }

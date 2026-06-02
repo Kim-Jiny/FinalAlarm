@@ -17,13 +17,15 @@ public struct UserDto: Codable, JSONEncodable, Hashable {
     public var displayName: String
     public var avatarUrl: AnyCodable?
     public var timezone: AnyCodable?
+    public var createdAt: Date?
 
-    public init(id: String, email: String, displayName: String, avatarUrl: AnyCodable? = nil, timezone: AnyCodable? = nil) {
+    public init(id: String, email: String, displayName: String, avatarUrl: AnyCodable? = nil, timezone: AnyCodable? = nil, createdAt: Date? = nil) {
         self.id = id
         self.email = email
         self.displayName = displayName
         self.avatarUrl = avatarUrl
         self.timezone = timezone
+        self.createdAt = createdAt
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
@@ -32,6 +34,7 @@ public struct UserDto: Codable, JSONEncodable, Hashable {
         case displayName
         case avatarUrl
         case timezone
+        case createdAt
     }
 
     // Encodable protocol methods
@@ -43,6 +46,7 @@ public struct UserDto: Codable, JSONEncodable, Hashable {
         try container.encode(displayName, forKey: .displayName)
         try container.encodeIfPresent(avatarUrl, forKey: .avatarUrl)
         try container.encodeIfPresent(timezone, forKey: .timezone)
+        try container.encodeIfPresent(createdAt, forKey: .createdAt)
     }
 }
 

@@ -18,7 +18,7 @@ public struct MissionDto: Codable, JSONEncodable, Hashable {
         case shake = "SHAKE"
     }
     public var id: String
-    public var ownerId: String
+    public var userId: String
     public var type: ModelType
     public var name: String
     public var config: [String: AnyCodable]
@@ -26,9 +26,9 @@ public struct MissionDto: Codable, JSONEncodable, Hashable {
     public var createdAt: Date
     public var updatedAt: Date
 
-    public init(id: String, ownerId: String, type: ModelType, name: String, config: [String: AnyCodable], isDefault: Bool, createdAt: Date, updatedAt: Date) {
+    public init(id: String, userId: String, type: ModelType, name: String, config: [String: AnyCodable], isDefault: Bool, createdAt: Date, updatedAt: Date) {
         self.id = id
-        self.ownerId = ownerId
+        self.userId = userId
         self.type = type
         self.name = name
         self.config = config
@@ -39,7 +39,7 @@ public struct MissionDto: Codable, JSONEncodable, Hashable {
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
         case id
-        case ownerId
+        case userId
         case type
         case name
         case config
@@ -53,7 +53,7 @@ public struct MissionDto: Codable, JSONEncodable, Hashable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
-        try container.encode(ownerId, forKey: .ownerId)
+        try container.encode(userId, forKey: .userId)
         try container.encode(type, forKey: .type)
         try container.encode(name, forKey: .name)
         try container.encode(config, forKey: .config)

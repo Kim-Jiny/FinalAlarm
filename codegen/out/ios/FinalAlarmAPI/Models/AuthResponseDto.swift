@@ -15,20 +15,17 @@ public struct AuthResponseDto: Codable, JSONEncodable, Hashable {
     public var user: UserDto
     public var accessToken: String
     public var refreshToken: String
-    public var expiresIn: Double
 
-    public init(user: UserDto, accessToken: String, refreshToken: String, expiresIn: Double) {
+    public init(user: UserDto, accessToken: String, refreshToken: String) {
         self.user = user
         self.accessToken = accessToken
         self.refreshToken = refreshToken
-        self.expiresIn = expiresIn
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
         case user
         case accessToken
         case refreshToken
-        case expiresIn
     }
 
     // Encodable protocol methods
@@ -38,7 +35,6 @@ public struct AuthResponseDto: Codable, JSONEncodable, Hashable {
         try container.encode(user, forKey: .user)
         try container.encode(accessToken, forKey: .accessToken)
         try container.encode(refreshToken, forKey: .refreshToken)
-        try container.encode(expiresIn, forKey: .expiresIn)
     }
 }
 

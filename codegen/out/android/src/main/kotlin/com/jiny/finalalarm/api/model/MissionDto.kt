@@ -24,15 +24,13 @@
 package com.jiny.finalalarm.api.model
 
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Contextual
+import com.google.gson.annotations.SerializedName
 
 /**
  * 
  *
  * @param id 
- * @param ownerId 
+ * @param userId 
  * @param type 
  * @param name 
  * @param config 
@@ -40,32 +38,32 @@ import kotlinx.serialization.Contextual
  * @param createdAt 
  * @param updatedAt 
  */
-@Serializable
+
 
 data class MissionDto (
 
-    @SerialName(value = "id")
+    @SerializedName("id")
     val id: kotlin.String,
 
-    @SerialName(value = "ownerId")
-    val ownerId: kotlin.String,
+    @SerializedName("userId")
+    val userId: kotlin.String,
 
-    @SerialName(value = "type")
+    @SerializedName("type")
     val type: MissionDto.Type,
 
-    @SerialName(value = "name")
+    @SerializedName("name")
     val name: kotlin.String,
 
-    @Contextual @SerialName(value = "config")
+    @SerializedName("config")
     val config: kotlin.collections.Map<kotlin.String, kotlin.Any>,
 
-    @SerialName(value = "isDefault")
+    @SerializedName("isDefault")
     val isDefault: kotlin.Boolean,
 
-    @SerialName(value = "createdAt")
+    @SerializedName("createdAt")
     val createdAt: kotlin.String,
 
-    @SerialName(value = "updatedAt")
+    @SerializedName("updatedAt")
     val updatedAt: kotlin.String
 
 ) {
@@ -75,11 +73,10 @@ data class MissionDto (
      *
      * Values: MATH,PHOTO,SHAKE
      */
-    @Serializable
     enum class Type(val value: kotlin.String) {
-        @SerialName(value = "MATH") MATH("MATH"),
-        @SerialName(value = "PHOTO") PHOTO("PHOTO"),
-        @SerialName(value = "SHAKE") SHAKE("SHAKE");
+        @SerializedName(value = "MATH") MATH("MATH"),
+        @SerializedName(value = "PHOTO") PHOTO("PHOTO"),
+        @SerializedName(value = "SHAKE") SHAKE("SHAKE");
     }
 
 }

@@ -24,9 +24,7 @@
 package com.jiny.finalalarm.api.model
 
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Contextual
+import com.google.gson.annotations.SerializedName
 
 /**
  * 
@@ -36,25 +34,29 @@ import kotlinx.serialization.Contextual
  * @param displayName 
  * @param avatarUrl 
  * @param timezone 
+ * @param createdAt 
  */
-@Serializable
+
 
 data class UserDto (
 
-    @SerialName(value = "id")
+    @SerializedName("id")
     val id: kotlin.String,
 
-    @SerialName(value = "email")
+    @SerializedName("email")
     val email: kotlin.String,
 
-    @SerialName(value = "displayName")
+    @SerializedName("displayName")
     val displayName: kotlin.String,
 
-    @Contextual @SerialName(value = "avatarUrl")
+    @SerializedName("avatarUrl")
     val avatarUrl: kotlin.Any? = null,
 
-    @Contextual @SerialName(value = "timezone")
-    val timezone: kotlin.Any? = null
+    @SerializedName("timezone")
+    val timezone: kotlin.Any? = null,
+
+    @SerializedName("createdAt")
+    val createdAt: kotlin.String? = null
 
 ) {
 

@@ -23,10 +23,10 @@
 
 package com.jiny.finalalarm.api.model
 
+import com.jiny.finalalarm.api.model.AlarmOwnerDto
+import com.jiny.finalalarm.api.model.AlarmTeamDto
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Contextual
+import com.google.gson.annotations.SerializedName
 
 /**
  * 
@@ -53,76 +53,84 @@ import kotlinx.serialization.Contextual
  * @param timeOfDay 
  * @param daysOfWeek 
  * @param oneShotAt 
+ * @param owner 
+ * @param team 
  */
-@Serializable
+
 
 data class AlarmDto (
 
-    @SerialName(value = "id")
+    @SerializedName("id")
     val id: kotlin.String,
 
-    @SerialName(value = "ownerId")
+    @SerializedName("ownerId")
     val ownerId: kotlin.String,
 
-    @SerialName(value = "kind")
+    @SerializedName("kind")
     val kind: AlarmDto.Kind,
 
-    @SerialName(value = "label")
+    @SerializedName("label")
     val label: kotlin.String,
 
-    @SerialName(value = "timezone")
+    @SerializedName("timezone")
     val timezone: kotlin.String,
 
-    @SerialName(value = "scheduleType")
+    @SerializedName("scheduleType")
     val scheduleType: AlarmDto.ScheduleType,
 
-    @SerialName(value = "soundUri")
+    @SerializedName("soundUri")
     val soundUri: kotlin.String,
 
-    @Contextual @SerialName(value = "volume")
+    @SerializedName("volume")
     val volume: java.math.BigDecimal,
 
-    @Contextual @SerialName(value = "volumeRampSeconds")
+    @SerializedName("volumeRampSeconds")
     val volumeRampSeconds: java.math.BigDecimal,
 
-    @SerialName(value = "vibrationEnabled")
+    @SerializedName("vibrationEnabled")
     val vibrationEnabled: kotlin.Boolean,
 
-    @SerialName(value = "vibrationPattern")
+    @SerializedName("vibrationPattern")
     val vibrationPattern: AlarmDto.VibrationPattern,
 
-    @SerialName(value = "snoozeEnabled")
+    @SerializedName("snoozeEnabled")
     val snoozeEnabled: kotlin.Boolean,
 
-    @Contextual @SerialName(value = "snoozeMinutes")
+    @SerializedName("snoozeMinutes")
     val snoozeMinutes: java.math.BigDecimal,
 
-    @Contextual @SerialName(value = "snoozeMaxCount")
+    @SerializedName("snoozeMaxCount")
     val snoozeMaxCount: java.math.BigDecimal,
 
-    @SerialName(value = "missionId")
+    @SerializedName("missionId")
     val missionId: kotlin.String,
 
-    @SerialName(value = "active")
+    @SerializedName("active")
     val active: kotlin.Boolean,
 
-    @SerialName(value = "createdAt")
+    @SerializedName("createdAt")
     val createdAt: kotlin.String,
 
-    @SerialName(value = "updatedAt")
+    @SerializedName("updatedAt")
     val updatedAt: kotlin.String,
 
-    @Contextual @SerialName(value = "teamId")
+    @SerializedName("teamId")
     val teamId: kotlin.Any? = null,
 
-    @Contextual @SerialName(value = "timeOfDay")
+    @SerializedName("timeOfDay")
     val timeOfDay: kotlin.Any? = null,
 
-    @Contextual @SerialName(value = "daysOfWeek")
+    @SerializedName("daysOfWeek")
     val daysOfWeek: kotlin.Any? = null,
 
-    @Contextual @SerialName(value = "oneShotAt")
-    val oneShotAt: kotlin.Any? = null
+    @SerializedName("oneShotAt")
+    val oneShotAt: kotlin.Any? = null,
+
+    @SerializedName("owner")
+    val owner: AlarmOwnerDto? = null,
+
+    @SerializedName("team")
+    val team: AlarmTeamDto? = null
 
 ) {
 
@@ -131,33 +139,30 @@ data class AlarmDto (
      *
      * Values: TEAM_APPROVAL,PERSONAL
      */
-    @Serializable
     enum class Kind(val value: kotlin.String) {
-        @SerialName(value = "TEAM_APPROVAL") TEAM_APPROVAL("TEAM_APPROVAL"),
-        @SerialName(value = "PERSONAL") PERSONAL("PERSONAL");
+        @SerializedName(value = "TEAM_APPROVAL") TEAM_APPROVAL("TEAM_APPROVAL"),
+        @SerializedName(value = "PERSONAL") PERSONAL("PERSONAL");
     }
     /**
      * 
      *
      * Values: ONE_SHOT,RECURRING
      */
-    @Serializable
     enum class ScheduleType(val value: kotlin.String) {
-        @SerialName(value = "ONE_SHOT") ONE_SHOT("ONE_SHOT"),
-        @SerialName(value = "RECURRING") RECURRING("RECURRING");
+        @SerializedName(value = "ONE_SHOT") ONE_SHOT("ONE_SHOT"),
+        @SerializedName(value = "RECURRING") RECURRING("RECURRING");
     }
     /**
      * 
      *
      * Values: SHORT,MEDIUM,LONG,PULSE,HEARTBEAT
      */
-    @Serializable
     enum class VibrationPattern(val value: kotlin.String) {
-        @SerialName(value = "SHORT") SHORT("SHORT"),
-        @SerialName(value = "MEDIUM") MEDIUM("MEDIUM"),
-        @SerialName(value = "LONG") LONG("LONG"),
-        @SerialName(value = "PULSE") PULSE("PULSE"),
-        @SerialName(value = "HEARTBEAT") HEARTBEAT("HEARTBEAT");
+        @SerializedName(value = "SHORT") SHORT("SHORT"),
+        @SerializedName(value = "MEDIUM") MEDIUM("MEDIUM"),
+        @SerializedName(value = "LONG") LONG("LONG"),
+        @SerializedName(value = "PULSE") PULSE("PULSE"),
+        @SerializedName(value = "HEARTBEAT") HEARTBEAT("HEARTBEAT");
     }
 
 }

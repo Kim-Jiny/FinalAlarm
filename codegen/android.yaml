@@ -9,7 +9,9 @@ packageName: com.jiny.finalalarm.api
 
 # Serialization & DateTime
 additionalProperties:
-  serializationLibrary: kotlinx_serialization
+  # gson — free-form JSON (Map<String, Any>)을 잘 처리. Android 본체는 kotlinx.serialization을
+  # 쓰지만 이 산출물은 별도 클라이언트라 호환 가능.
+  serializationLibrary: gson
   dateLibrary: string
   useCoroutines: true
   enumPropertyNaming: original

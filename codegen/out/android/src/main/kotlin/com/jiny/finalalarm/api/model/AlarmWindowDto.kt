@@ -24,9 +24,7 @@
 package com.jiny.finalalarm.api.model
 
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Contextual
+import com.google.gson.annotations.SerializedName
 
 /**
  * 
@@ -39,29 +37,29 @@ import kotlinx.serialization.Contextual
  * @param timezone 
  * @param createdAt 
  */
-@Serializable
+
 
 data class AlarmWindowDto (
 
-    @SerialName(value = "id")
+    @SerializedName("id")
     val id: kotlin.String,
 
-    @SerialName(value = "teamId")
+    @SerializedName("teamId")
     val teamId: kotlin.String,
 
-    @SerialName(value = "startTime")
+    @SerializedName("startTime")
     val startTime: kotlin.String,
 
-    @SerialName(value = "endTime")
+    @SerializedName("endTime")
     val endTime: kotlin.String,
 
-    @Contextual @SerialName(value = "daysOfWeek")
+    @SerializedName("daysOfWeek")
     val daysOfWeek: java.math.BigDecimal,
 
-    @SerialName(value = "timezone")
+    @SerializedName("timezone")
     val timezone: kotlin.String,
 
-    @SerialName(value = "createdAt")
+    @SerializedName("createdAt")
     val createdAt: kotlin.String
 
 ) {

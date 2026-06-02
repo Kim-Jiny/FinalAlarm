@@ -24,9 +24,7 @@
 package com.jiny.finalalarm.api.model
 
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Contextual
+import com.google.gson.annotations.SerializedName
 
 /**
  * 
@@ -34,14 +32,14 @@ import kotlinx.serialization.Contextual
  * @param teamName 
  * @param expiresAt 
  */
-@Serializable
+
 
 data class InvitePreviewDto (
 
-    @SerialName(value = "teamName")
+    @SerializedName("teamName")
     val teamName: kotlin.String,
 
-    @SerialName(value = "expiresAt")
+    @SerializedName("expiresAt")
     val expiresAt: kotlin.String
 
 ) {

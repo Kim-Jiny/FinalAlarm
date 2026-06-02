@@ -24,9 +24,7 @@
 package com.jiny.finalalarm.api.model
 
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Contextual
+import com.google.gson.annotations.SerializedName
 
 /**
  * 
@@ -39,29 +37,29 @@ import kotlinx.serialization.Contextual
  * @param createdAt 
  * @param lastSeenAt 
  */
-@Serializable
+
 
 data class PushTokenDto (
 
-    @SerialName(value = "id")
+    @SerializedName("id")
     val id: kotlin.String,
 
-    @SerialName(value = "userId")
+    @SerializedName("userId")
     val userId: kotlin.String,
 
-    @SerialName(value = "platform")
+    @SerializedName("platform")
     val platform: PushTokenDto.Platform,
 
-    @SerialName(value = "token")
+    @SerializedName("token")
     val token: kotlin.String,
 
-    @SerialName(value = "deviceId")
+    @SerializedName("deviceId")
     val deviceId: kotlin.String,
 
-    @SerialName(value = "createdAt")
+    @SerializedName("createdAt")
     val createdAt: kotlin.String,
 
-    @SerialName(value = "lastSeenAt")
+    @SerializedName("lastSeenAt")
     val lastSeenAt: kotlin.String
 
 ) {
@@ -71,10 +69,9 @@ data class PushTokenDto (
      *
      * Values: ANDROID,IOS
      */
-    @Serializable
     enum class Platform(val value: kotlin.String) {
-        @SerialName(value = "ANDROID") ANDROID("ANDROID"),
-        @SerialName(value = "IOS") IOS("IOS");
+        @SerializedName(value = "ANDROID") ANDROID("ANDROID"),
+        @SerializedName(value = "IOS") IOS("IOS");
     }
 
 }

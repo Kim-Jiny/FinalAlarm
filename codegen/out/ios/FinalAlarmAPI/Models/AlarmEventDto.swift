@@ -41,8 +41,11 @@ public struct AlarmEventDto: Codable, JSONEncodable, Hashable {
     public var liveVolumePct: AnyCodable?
     public var liveDnd: AnyCodable?
     public var createdAt: Date
+    public var definition: AlarmDto?
+    public var mission: MissionDto?
+    public var sender: AlarmOwnerDto?
 
-    public init(id: String, definitionId: AnyCodable? = nil, windowId: AnyCodable? = nil, targetUserId: String, senderUserId: AnyCodable? = nil, teamId: AnyCodable? = nil, missionId: String, state: State, snoozeCount: Double, lastSnoozedAt: AnyCodable? = nil, nextRingAt: AnyCodable? = nil, triggeredAt: Date, dismissedAt: AnyCodable? = nil, volumePctAtTrigger: AnyCodable? = nil, dndAtTrigger: AnyCodable? = nil, volumePctAtDismiss: AnyCodable? = nil, dndAtDismiss: AnyCodable? = nil, lastSeenAt: AnyCodable? = nil, liveVolumePct: AnyCodable? = nil, liveDnd: AnyCodable? = nil, createdAt: Date) {
+    public init(id: String, definitionId: AnyCodable? = nil, windowId: AnyCodable? = nil, targetUserId: String, senderUserId: AnyCodable? = nil, teamId: AnyCodable? = nil, missionId: String, state: State, snoozeCount: Double, lastSnoozedAt: AnyCodable? = nil, nextRingAt: AnyCodable? = nil, triggeredAt: Date, dismissedAt: AnyCodable? = nil, volumePctAtTrigger: AnyCodable? = nil, dndAtTrigger: AnyCodable? = nil, volumePctAtDismiss: AnyCodable? = nil, dndAtDismiss: AnyCodable? = nil, lastSeenAt: AnyCodable? = nil, liveVolumePct: AnyCodable? = nil, liveDnd: AnyCodable? = nil, createdAt: Date, definition: AlarmDto? = nil, mission: MissionDto? = nil, sender: AlarmOwnerDto? = nil) {
         self.id = id
         self.definitionId = definitionId
         self.windowId = windowId
@@ -64,6 +67,9 @@ public struct AlarmEventDto: Codable, JSONEncodable, Hashable {
         self.liveVolumePct = liveVolumePct
         self.liveDnd = liveDnd
         self.createdAt = createdAt
+        self.definition = definition
+        self.mission = mission
+        self.sender = sender
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
@@ -88,6 +94,9 @@ public struct AlarmEventDto: Codable, JSONEncodable, Hashable {
         case liveVolumePct
         case liveDnd
         case createdAt
+        case definition
+        case mission
+        case sender
     }
 
     // Encodable protocol methods
@@ -115,6 +124,9 @@ public struct AlarmEventDto: Codable, JSONEncodable, Hashable {
         try container.encodeIfPresent(liveVolumePct, forKey: .liveVolumePct)
         try container.encodeIfPresent(liveDnd, forKey: .liveDnd)
         try container.encode(createdAt, forKey: .createdAt)
+        try container.encodeIfPresent(definition, forKey: .definition)
+        try container.encodeIfPresent(mission, forKey: .mission)
+        try container.encodeIfPresent(sender, forKey: .sender)
     }
 }
 

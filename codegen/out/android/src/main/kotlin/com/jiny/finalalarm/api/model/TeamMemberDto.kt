@@ -26,9 +26,7 @@ package com.jiny.finalalarm.api.model
 import com.jiny.finalalarm.api.model.LastAlarmSnapshotDto
 import com.jiny.finalalarm.api.model.TeamMemberUserDto
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Contextual
+import com.google.gson.annotations.SerializedName
 
 /**
  * 
@@ -40,26 +38,26 @@ import kotlinx.serialization.Contextual
  * @param user 
  * @param lastAlarmSnapshot 
  */
-@Serializable
+
 
 data class TeamMemberDto (
 
-    @SerialName(value = "teamId")
+    @SerializedName("teamId")
     val teamId: kotlin.String,
 
-    @SerialName(value = "userId")
+    @SerializedName("userId")
     val userId: kotlin.String,
 
-    @SerialName(value = "role")
+    @SerializedName("role")
     val role: TeamMemberDto.Role,
 
-    @SerialName(value = "joinedAt")
+    @SerializedName("joinedAt")
     val joinedAt: kotlin.String,
 
-    @SerialName(value = "user")
+    @SerializedName("user")
     val user: TeamMemberUserDto,
 
-    @SerialName(value = "lastAlarmSnapshot")
+    @SerializedName("lastAlarmSnapshot")
     val lastAlarmSnapshot: LastAlarmSnapshotDto? = null
 
 ) {
@@ -69,11 +67,10 @@ data class TeamMemberDto (
      *
      * Values: OWNER,ADMIN,MEMBER
      */
-    @Serializable
     enum class Role(val value: kotlin.String) {
-        @SerialName(value = "OWNER") OWNER("OWNER"),
-        @SerialName(value = "ADMIN") ADMIN("ADMIN"),
-        @SerialName(value = "MEMBER") MEMBER("MEMBER");
+        @SerializedName(value = "OWNER") OWNER("OWNER"),
+        @SerializedName(value = "ADMIN") ADMIN("ADMIN"),
+        @SerializedName(value = "MEMBER") MEMBER("MEMBER");
     }
 
 }

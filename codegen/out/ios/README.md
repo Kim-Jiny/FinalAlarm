@@ -82,6 +82,8 @@ Class | Method | HTTP request | Description
 
  - [AlarmDto](docs/AlarmDto.md)
  - [AlarmEventDto](docs/AlarmEventDto.md)
+ - [AlarmOwnerDto](docs/AlarmOwnerDto.md)
+ - [AlarmTeamDto](docs/AlarmTeamDto.md)
  - [AlarmWindowDto](docs/AlarmWindowDto.md)
  - [AuthResponseDto](docs/AuthResponseDto.md)
  - [HeartbeatAckDto](docs/HeartbeatAckDto.md)

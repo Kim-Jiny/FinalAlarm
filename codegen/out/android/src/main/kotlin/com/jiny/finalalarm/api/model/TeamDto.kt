@@ -25,9 +25,7 @@ package com.jiny.finalalarm.api.model
 
 import com.jiny.finalalarm.api.model.TeamMemberDto
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Contextual
+import com.google.gson.annotations.SerializedName
 
 /**
  * 
@@ -39,26 +37,26 @@ import kotlinx.serialization.Contextual
  * @param members 
  * @param createdBy 
  */
-@Serializable
+
 
 data class TeamDto (
 
-    @SerialName(value = "id")
+    @SerializedName("id")
     val id: kotlin.String,
 
-    @SerialName(value = "name")
+    @SerializedName("name")
     val name: kotlin.String,
 
-    @SerialName(value = "createdAt")
+    @SerializedName("createdAt")
     val createdAt: kotlin.String,
 
-    @SerialName(value = "updatedAt")
+    @SerializedName("updatedAt")
     val updatedAt: kotlin.String,
 
-    @SerialName(value = "members")
+    @SerializedName("members")
     val members: kotlin.collections.List<TeamMemberDto>,
 
-    @Contextual @SerialName(value = "createdBy")
+    @SerializedName("createdBy")
     val createdBy: kotlin.Any? = null
 
 ) {

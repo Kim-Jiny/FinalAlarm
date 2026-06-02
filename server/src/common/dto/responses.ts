@@ -22,13 +22,13 @@ export class UserDto {
   @ApiProperty() displayName!: string;
   @ApiPropertyOptional({ nullable: true }) avatarUrl!: string | null;
   @ApiPropertyOptional({ nullable: true }) timezone!: string | null;
+  @ApiPropertyOptional() createdAt?: Date;
 }
 
 export class AuthResponseDto {
   @ApiProperty({ type: UserDto }) user!: UserDto;
   @ApiProperty() accessToken!: string;
   @ApiProperty() refreshToken!: string;
-  @ApiProperty() expiresIn!: number;
 }
 
 // ---------- Teams ----------
@@ -107,7 +107,7 @@ export class RedeemInviteDto {
 
 export class MissionDto {
   @ApiProperty() id!: string;
-  @ApiProperty() ownerId!: string;
+  @ApiProperty() userId!: string;
   @ApiProperty({ enum: MissionType }) type!: MissionType;
   @ApiProperty() name!: string;
   @ApiProperty({ type: 'object', additionalProperties: true })
@@ -118,6 +118,19 @@ export class MissionDto {
 }
 
 // ---------- Alarms ----------
+
+/** Alarm 응답에 함께 포함되는 owner 요약 (Prisma include) */
+export class AlarmOwnerDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() displayName!: string;
+  @ApiPropertyOptional({ nullable: true }) avatarUrl!: string | null;
+}
+
+/** Alarm 응답에 함께 포함되는 team 요약 */
+export class AlarmTeamDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() name!: string;
+}
 
 export class AlarmDto {
   @ApiProperty() id!: string;
@@ -142,6 +155,10 @@ export class AlarmDto {
   @ApiProperty() active!: boolean;
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
+  @ApiPropertyOptional({ type: AlarmOwnerDto, nullable: true })
+  owner?: AlarmOwnerDto | null;
+  @ApiPropertyOptional({ type: AlarmTeamDto, nullable: true })
+  team?: AlarmTeamDto | null;
 }
 
 // ---------- Alarm Windows ----------
@@ -180,6 +197,13 @@ export class AlarmEventDto {
   @ApiPropertyOptional({ nullable: true }) liveVolumePct!: number | null;
   @ApiPropertyOptional({ nullable: true }) liveDnd!: boolean | null;
   @ApiProperty() createdAt!: Date;
+  // Prisma include로 합쳐 보낼 때만 채워짐 (단건 조회 + active 리스트). history는 nested 없음.
+  @ApiPropertyOptional({ type: AlarmDto, nullable: true })
+  definition?: AlarmDto | null;
+  @ApiPropertyOptional({ type: MissionDto, nullable: true })
+  mission?: MissionDto | null;
+  @ApiPropertyOptional({ type: AlarmOwnerDto, nullable: true })
+  sender?: AlarmOwnerDto | null;
 }
 
 export class HeartbeatAckDto {

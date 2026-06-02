@@ -24,9 +24,7 @@
 package com.jiny.finalalarm.api.model
 
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Contextual
+import com.google.gson.annotations.SerializedName
 
 /**
  * 
@@ -36,20 +34,20 @@ import kotlinx.serialization.Contextual
  * @param role 
  * @param joinedAt 
  */
-@Serializable
+
 
 data class TeamSummaryDto (
 
-    @SerialName(value = "id")
+    @SerializedName("id")
     val id: kotlin.String,
 
-    @SerialName(value = "name")
+    @SerializedName("name")
     val name: kotlin.String,
 
-    @SerialName(value = "role")
+    @SerializedName("role")
     val role: TeamSummaryDto.Role,
 
-    @SerialName(value = "joinedAt")
+    @SerializedName("joinedAt")
     val joinedAt: kotlin.String
 
 ) {
@@ -59,11 +57,10 @@ data class TeamSummaryDto (
      *
      * Values: OWNER,ADMIN,MEMBER
      */
-    @Serializable
     enum class Role(val value: kotlin.String) {
-        @SerialName(value = "OWNER") OWNER("OWNER"),
-        @SerialName(value = "ADMIN") ADMIN("ADMIN"),
-        @SerialName(value = "MEMBER") MEMBER("MEMBER");
+        @SerializedName(value = "OWNER") OWNER("OWNER"),
+        @SerializedName(value = "ADMIN") ADMIN("ADMIN"),
+        @SerializedName(value = "MEMBER") MEMBER("MEMBER");
     }
 
 }

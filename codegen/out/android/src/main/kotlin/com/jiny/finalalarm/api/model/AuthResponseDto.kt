@@ -25,9 +25,7 @@ package com.jiny.finalalarm.api.model
 
 import com.jiny.finalalarm.api.model.UserDto
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Contextual
+import com.google.gson.annotations.SerializedName
 
 /**
  * 
@@ -35,23 +33,19 @@ import kotlinx.serialization.Contextual
  * @param user 
  * @param accessToken 
  * @param refreshToken 
- * @param expiresIn 
  */
-@Serializable
+
 
 data class AuthResponseDto (
 
-    @SerialName(value = "user")
+    @SerializedName("user")
     val user: UserDto,
 
-    @SerialName(value = "accessToken")
+    @SerializedName("accessToken")
     val accessToken: kotlin.String,
 
-    @SerialName(value = "refreshToken")
-    val refreshToken: kotlin.String,
-
-    @Contextual @SerialName(value = "expiresIn")
-    val expiresIn: java.math.BigDecimal
+    @SerializedName("refreshToken")
+    val refreshToken: kotlin.String
 
 ) {
 

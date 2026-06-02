@@ -24,20 +24,18 @@
 package com.jiny.finalalarm.api.model
 
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Contextual
+import com.google.gson.annotations.SerializedName
 
 /**
  * 
  *
  * @param teamId 
  */
-@Serializable
+
 
 data class RedeemInviteDto (
 
-    @SerialName(value = "teamId")
+    @SerializedName("teamId")
     val teamId: kotlin.String
 
 ) {

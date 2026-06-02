@@ -27,6 +27,13 @@ build/
 # Node modules (root)
 node_modules/
 
+# Codegen 산출물의 빌드 캐시 — 산출물 소스만 commit
+codegen/out/*/.gradle/
+codegen/out/*/build/
+codegen/out/*/.build/
+codegen/out/*/.swiftpm/
+codegen/out/ios/Package.resolved
+
 # OpenAPI export — 빌드 산출물. server/openapi.json도 함께.
 /openapi.json
 /server/openapi.json

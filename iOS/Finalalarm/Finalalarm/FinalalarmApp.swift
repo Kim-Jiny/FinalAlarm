@@ -4,6 +4,7 @@ import UserNotifications
 @main
 struct FinalalarmApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @Environment(\.scenePhase) private var scenePhase
     @State private var tokens = TokenStore.shared
     @State private var ringingAlarmId: String? = nil
     @State private var ringingKind: AlarmKind = .PERSONAL
@@ -18,6 +19,11 @@ struct FinalalarmApp: App {
             RootView()
                 .environment(tokens)
                 .tint(FA.primary)
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active {
+                        Task { await EventReconciler.drain() }
+                    }
+                }
                 .onReceive(NotificationCenter.default.publisher(for: .faAlarmTriggered)) { note in
                     if let info = note.userInfo,
                        let id = info["alarmId"] as? String {

@@ -1,7 +1,6 @@
 package com.jiny.finalalarm.core.network
 
 import com.jiny.finalalarm.core.auth.TokenStore
-import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
 import javax.inject.Inject
@@ -12,7 +11,7 @@ class AuthInterceptor @Inject constructor(
     private val tokenStore: TokenStore,
 ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
-        val token = runBlocking { tokenStore.access() }
+        val token = tokenStore.accessSync()
         val req = chain.request().newBuilder().apply {
             if (token != null) header("Authorization", "Bearer $token")
         }.build()

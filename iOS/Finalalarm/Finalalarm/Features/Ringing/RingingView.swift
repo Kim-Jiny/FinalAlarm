@@ -91,12 +91,14 @@ struct RingingView: View {
     }
 
     /// 알람 울리는 시점 디바이스 상태를 서버에 보고 → eventId 받음.
+    /// 네트워크 실패 시 PendingEventStore에 적재해 다음 진입 시 reconcile.
     private func reportTrigger() async {
         guard let alarm else { return }
         let ds = DeviceState.probe()
+        let triggeredAt = ISO8601DateFormatter.withMillis.string(from: Date())
         let req = CreateAlarmEventRequest(
             definitionId: alarm.id,
-            triggeredAt: ISO8601DateFormatter.withMillis.string(from: Date()),
+            triggeredAt: triggeredAt,
             initialState: "RINGING",
             dismissedAt: nil,
             volumePctAtTrigger: ds.volumePct,
@@ -104,14 +106,45 @@ struct RingingView: View {
             volumePctAtDismiss: nil,
             dndAtDismiss: nil
         )
-        let event = try? await eventsRepo.create(req)
-        eventId = event?.id
+        do {
+            let event = try await eventsRepo.create(req)
+            eventId = event.id
+        } catch {
+            // 오프라인 — 로컬 ID 부여하고 큐에 적재
+            let localId = "local-\(UUID().uuidString)"
+            eventId = localId
+            PendingEventStore.shared.add(PendingEventStore.Pending(
+                localId: localId,
+                definitionId: alarm.id,
+                triggeredAt: triggeredAt,
+                dismissed: false,
+                dismissedAt: nil,
+                volumePctAtTrigger: ds.volumePct,
+                dndAtTrigger: ds.dnd,
+                volumePctAtDismiss: nil,
+                dndAtDismiss: nil
+            ))
+        }
     }
 
     /// 미션 통과 후 dismiss API 호출 (개인 알람만; 팀 승인은 별도 흐름).
+    /// 오프라인이면 큐에 dismiss 표시.
     private func reportDismiss(passedMission m: MissionDto) async {
         guard !isTeamApproval, let id = eventId else { return }
         let ds = DeviceState.probe()
+        let dismissedAt = ISO8601DateFormatter.withMillis.string(from: Date())
+
+        // 로컬 이벤트면 큐에만 표시
+        if id.hasPrefix("local-") {
+            PendingEventStore.shared.markDismissed(
+                localId: id,
+                dismissedAt: dismissedAt,
+                volumePct: ds.volumePct,
+                dnd: ds.dnd
+            )
+            return
+        }
+
         var proof: [String: AnyCodable] = ["type": .string(m.type.rawValue)]
         switch m.type {
         case .MATH: proof["answers"] = .array([])
@@ -122,12 +155,12 @@ struct RingingView: View {
         _ = try? await eventsRepo.dismiss(id, req)
     }
 
-    /// 알람 울리는 동안 5초마다 디바이스 상태 라이브 보고.
+    /// 알람 울리는 동안 5초마다 디바이스 상태 라이브 보고. 오프라인(local-) 이벤트는 스킵.
     private func heartbeatLoop() async {
         heartbeatTask?.cancel()
         heartbeatTask = Task {
             while !Task.isCancelled {
-                if let id = eventId, !missionPassed {
+                if let id = eventId, !id.hasPrefix("local-"), !missionPassed {
                     let ds = DeviceState.probe()
                     try? await eventsRepo.heartbeat(id, volumePct: ds.volumePct, dnd: ds.dnd)
                 }

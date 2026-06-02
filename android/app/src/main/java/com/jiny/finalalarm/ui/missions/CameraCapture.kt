@@ -132,7 +132,9 @@ fun CameraCapture(
                                 image.close()
                                 val final = if (rotation == 0) raw else {
                                     val m = Matrix().apply { postRotate(rotation.toFloat()) }
-                                    Bitmap.createBitmap(raw, 0, 0, raw.width, raw.height, m, true)
+                                    val rotated = Bitmap.createBitmap(raw, 0, 0, raw.width, raw.height, m, true)
+                                    if (rotated !== raw) raw.recycle()
+                                    rotated
                                 }
                                 onCapture(final)
                                 capturing = false

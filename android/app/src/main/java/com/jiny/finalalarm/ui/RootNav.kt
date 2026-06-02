@@ -119,12 +119,18 @@ fun RootNav(initialInviteCode: String? = null) {
         composable(
             Routes.TEAM_DETAIL,
             arguments = listOf(navArgument("id") { type = NavType.StringType }),
-        ) { entry -> TeamDetailScreen(nav, entry.arguments!!.getString("id")!!) }
+        ) { entry ->
+            val id = entry.arguments?.getString("id") ?: return@composable
+            TeamDetailScreen(nav, id)
+        }
 
         composable(
             Routes.TEAM_INVITE,
             arguments = listOf(navArgument("id") { type = NavType.StringType }),
-        ) { entry -> TeamInviteScreen(nav, entry.arguments!!.getString("id")!!) }
+        ) { entry ->
+            val id = entry.arguments?.getString("id") ?: return@composable
+            TeamInviteScreen(nav, id)
+        }
 
         composable(
             Routes.JOIN_TEAM,
@@ -147,17 +153,26 @@ fun RootNav(initialInviteCode: String? = null) {
         composable(
             Routes.PUSH_ALARM,
             arguments = listOf(navArgument("teamId") { type = NavType.StringType }),
-        ) { entry -> PushAlarmScreen(nav, entry.arguments!!.getString("teamId")!!) }
+        ) { entry ->
+            val teamId = entry.arguments?.getString("teamId") ?: return@composable
+            PushAlarmScreen(nav, teamId)
+        }
 
         composable(
             Routes.INBOX_LIST,
             arguments = listOf(navArgument("teamId") { type = NavType.StringType }),
-        ) { entry -> InboxListScreen(nav, entry.arguments!!.getString("teamId")!!) }
+        ) { entry ->
+            val teamId = entry.arguments?.getString("teamId") ?: return@composable
+            InboxListScreen(nav, teamId)
+        }
 
         composable(
             Routes.UNLOCK_DETAIL,
             arguments = listOf(navArgument("id") { type = NavType.StringType }),
-        ) { entry -> UnlockRequestDetailScreen(nav, entry.arguments!!.getString("id")!!) }
+        ) { entry ->
+            val id = entry.arguments?.getString("id") ?: return@composable
+            UnlockRequestDetailScreen(nav, id)
+        }
 
         composable(Routes.HISTORY) { HistoryScreen(nav) }
     }

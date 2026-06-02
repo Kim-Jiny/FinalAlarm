@@ -12,18 +12,22 @@ object ImageHash {
 
     fun aHash(bitmap: Bitmap): Long {
         val scaled = Bitmap.createScaledBitmap(bitmap, SIZE, SIZE, true)
-        val pixels = IntArray(SIZE * SIZE)
-        scaled.getPixels(pixels, 0, SIZE, 0, 0, SIZE, SIZE)
-        val grays = IntArray(SIZE * SIZE) { i ->
-            val p = pixels[i]
-            (Color.red(p) + Color.green(p) + Color.blue(p)) / 3
+        try {
+            val pixels = IntArray(SIZE * SIZE)
+            scaled.getPixels(pixels, 0, SIZE, 0, 0, SIZE, SIZE)
+            val grays = IntArray(SIZE * SIZE) { i ->
+                val p = pixels[i]
+                (Color.red(p) + Color.green(p) + Color.blue(p)) / 3
+            }
+            val avg = grays.sum().toDouble() / grays.size
+            var hash = 0L
+            for (i in grays.indices) {
+                if (grays[i] > avg) hash = hash or (1L shl i)
+            }
+            return hash
+        } finally {
+            if (scaled !== bitmap) scaled.recycle()
         }
-        val avg = grays.sum().toDouble() / grays.size
-        var hash = 0L
-        for (i in grays.indices) {
-            if (grays[i] > avg) hash = hash or (1L shl i)
-        }
-        return hash
     }
 
     fun hamming(a: Long, b: Long): Int = java.lang.Long.bitCount(a xor b)

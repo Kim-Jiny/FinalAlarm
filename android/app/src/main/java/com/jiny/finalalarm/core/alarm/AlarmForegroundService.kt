@@ -88,8 +88,8 @@ class AlarmForegroundService : Service() {
                     ),
                 )
             }
-            if (result.isSuccess) {
-                return payload.copy(eventId = result.getOrNull()!!.id)
+            result.getOrNull()?.let { event ->
+                return payload.copy(eventId = event.id)
             }
             Timber.w(result.exceptionOrNull(), "createEvent attempt ${i + 1} failed")
         }

@@ -96,7 +96,7 @@ struct RingingView: View {
         let ds = DeviceState.probe()
         let req = CreateAlarmEventRequest(
             definitionId: alarm.id,
-            triggeredAt: ISO8601DateFormatter().string(from: Date()),
+            triggeredAt: ISO8601DateFormatter.withMillis.string(from: Date()),
             initialState: "RINGING",
             dismissedAt: nil,
             volumePctAtTrigger: ds.volumePct,

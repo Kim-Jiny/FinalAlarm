@@ -153,10 +153,15 @@ struct OnboardingView: View {
                 }
 
                 FASection(title: "포커스/방해금지 모드") {
-                    Text("아이폰 설정 → 집중 모드에서 FinalAlarm을 허용 앱에 추가하면 끝까지 울려요.")
-                        .font(.system(size: 14))
-                        .foregroundStyle(FA.labelSecondary)
-                        .padding(.horizontal, FASpacing.sm)
+                    VStack(alignment: .leading, spacing: FASpacing.xs) {
+                        Text("아이폰 설정 → 집중 모드에서 FinalAlarm을 허용 앱에 추가하면 끝까지 울려요.")
+                            .font(.system(size: 14))
+                            .foregroundStyle(FA.labelSecondary)
+                        Text("⚠️ iOS는 집중 모드 켜진 상태를 자동 감지할 수 없어요. 팀원도 모릅니다 — 직접 챙겨주세요.")
+                            .font(.system(size: 13))
+                            .foregroundStyle(FA.destructive)
+                    }
+                    .padding(.horizontal, FASpacing.sm)
                 }
 
                 Spacer().frame(maxHeight: .infinity)

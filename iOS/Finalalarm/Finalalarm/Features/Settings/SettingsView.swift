@@ -45,6 +45,19 @@ struct SettingsView: View {
 
                     FASection(title: "알림") {
                         NotificationStatusRow()
+                        VStack(alignment: .leading, spacing: FASpacing.xs) {
+                            Text("⚠️ iOS 한계 안내")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(FA.destructive)
+                            Text("• 집중 모드(방해금지)가 켜져 있어도 iOS는 자동 감지가 불가합니다. 팀원도 이 상태를 알 수 없어요.")
+                                .font(.system(size: 13))
+                                .foregroundStyle(FA.labelSecondary)
+                            Text("• 미디어 볼륨이 0이면 알람 사운드가 무음입니다. 잠들기 전에 확인해주세요.")
+                                .font(.system(size: 13))
+                                .foregroundStyle(FA.labelSecondary)
+                        }
+                        .padding(.horizontal, FASpacing.sm)
+                        .padding(.top, FASpacing.xs)
                     }
 
                     FASection(title: "관리") {

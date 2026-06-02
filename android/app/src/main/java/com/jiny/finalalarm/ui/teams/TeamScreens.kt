@@ -234,9 +234,17 @@ fun TeamDetailScreen(nav: NavController, teamId: String) {
                     val snap = m.lastAlarmSnapshot
                     val deviceNote = snap?.let { s ->
                         val parts = mutableListOf<String>()
-                        val isLive = s.state == com.jiny.finalalarm.data.api.AlarmEventState.RINGING ||
+                        val isRingingState = s.state == com.jiny.finalalarm.data.api.AlarmEventState.RINGING ||
                             s.state == com.jiny.finalalarm.data.api.AlarmEventState.UNLOCK_REQUESTED ||
                             s.state == com.jiny.finalalarm.data.api.AlarmEventState.SNOOZED
+                        // heartbeat 30초 이상 끊긴 RINGING은 "stale" — 클라가 죽었거나 끔. 라이브 표시 안 함.
+                        val heartbeatFresh = s.lastSeenAt?.let {
+                            runCatching {
+                                val seen = java.time.OffsetDateTime.parse(it)
+                                java.time.Duration.between(seen, java.time.OffsetDateTime.now()).seconds < 30
+                            }.getOrDefault(false)
+                        } ?: false
+                        val isLive = isRingingState && heartbeatFresh
                         if (isLive) {
                             parts += "🔔 지금 울리는 중"
                             val liveVol = s.liveVolumePct ?: s.volumePctAtTrigger

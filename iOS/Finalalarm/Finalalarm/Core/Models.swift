@@ -1,5 +1,14 @@
 import Foundation
 
+extension ISO8601DateFormatter {
+    /// 서버는 밀리초 포함 ISO8601 (예: 2026-06-01T01:18:16.035Z) 사용.
+    static let withMillis: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+}
+
 // MARK: - Auth
 
 struct AuthTokens: Codable {

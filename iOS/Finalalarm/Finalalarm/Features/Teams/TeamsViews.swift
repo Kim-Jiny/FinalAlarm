@@ -241,7 +241,15 @@ struct TeamDetailView: View {
         var lines: [String] = [m.role.label]
         if let s = m.lastAlarmSnapshot {
             var parts: [String] = []
-            let isLive = s.state == .RINGING || s.state == .UNLOCK_REQUESTED || s.state == .SNOOZED
+            let isRingingState = s.state == .RINGING || s.state == .UNLOCK_REQUESTED || s.state == .SNOOZED
+            // heartbeat 30초 이상 끊긴 RINGING은 stale — 클라가 죽었거나 비행기 모드. 라이브 표시 안 함.
+            let heartbeatFresh: Bool = {
+                guard let seenStr = s.lastSeenAt,
+                      let seen = ISO8601DateFormatter.withMillis.date(from: seenStr)
+                else { return false }
+                return Date().timeIntervalSince(seen) < 30
+            }()
+            let isLive = isRingingState && heartbeatFresh
             if isLive {
                 parts.append("🔔 지금 울리는 중")
                 let liveVol = s.liveVolumePct ?? s.volumePctAtTrigger

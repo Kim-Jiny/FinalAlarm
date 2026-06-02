@@ -101,6 +101,7 @@ export class InvitePreviewDto {
 
 export class RedeemInviteDto {
   @ApiProperty() teamId!: string;
+  @ApiProperty({ description: '이미 멤버인 경우 true' }) already!: boolean;
 }
 
 // ---------- Missions ----------

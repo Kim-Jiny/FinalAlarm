@@ -22,7 +22,7 @@ final class PushAlarmVm {
         guard let target = selectedUserId else { return }
         sending = true; error = nil
         do {
-            try await pushRepo.send(PushAlarmRequest(toUserId: target, teamId: teamId, label: label))
+            try await pushRepo.send(PushAlarmRequest(targetUserId: target, teamId: teamId, label: label))
             sent = true
         } catch {
             self.error = (error as? LocalizedError)?.errorDescription

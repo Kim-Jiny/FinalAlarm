@@ -329,9 +329,9 @@ struct UnlockRequestDto: Codable, Identifiable {
 // MARK: - Push alarm
 
 struct PushAlarmRequest: Codable {
-    let toUserId: String
+    let targetUserId: String
     let teamId: String
-    let label: String
+    let label: String?
 }
 
 // MARK: - Push tokens

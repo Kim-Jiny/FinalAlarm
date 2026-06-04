@@ -8,6 +8,8 @@ import android.provider.Settings
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -107,6 +109,13 @@ fun SettingsTab(
                     val launched = runCatching { ctx.startActivity(direct) }.isSuccess
                     if (!launched) runCatching { ctx.startActivity(fallback) }
                 },
+                trailing = if (batteryIgnored) ({
+                    Icon(
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = "배터리 최적화 제외됨",
+                        tint = com.jiny.finalalarm.ui.theme.FA.Success,
+                    )
+                }) else null,
             )
         }
 
